@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sam.brott</title>
+    <style>
+        :root {
+            --bg: #000;
+            --text: #fff;
+            --text-muted: #888;
+            --border: #222;
+            --card-bg: #111;
+        }
+        [data-theme="light"] {
+            --bg: #fff;
+            --text: #000;
+            --text-muted: #666;
+            --border: #e0e0e0;
+            --card-bg: #f5f5f5;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            opacity: 0;
+            animation: fadeIn 0.6s ease-in forwards;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            background: var(--bg);
+            padding: 30px 0;
+            border-bottom: none;
+            transition: background 0.3s ease;
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--text);
+            text-decoration: none;
+            font-family: "Helvetica", "Helvetica Neue", Arial, sans-serif;
+        }
+        nav { display: flex; gap: 30px; align-items: center; }
+        nav a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 400;
+            transition: opacity 0.3s;
+        }
+        nav a:hover { opacity: 0.5; }
+        main { padding-top: 80px; }
+        .projects-grid { display: flex; flex-direction: column; }
+        .project-card {
+            text-decoration: none;
+            color: var(--text);
+            display: block;
+            cursor: pointer;
+            position: relative;
+        }
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.6) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .project-card:hover::before { opacity: 1; }
+        .project-title {
+            position: absolute;
+            bottom: 32px; left: 32px;
+            color: #fff;
+            font-size: 36px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 2;
+            pointer-events: none;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+        }
+        .project-card:hover .project-title { opacity: 1; transform: translateY(0); }
+        .project-image {
+            width: 100%;
+            height: 70vh;
+            object-fit: cover;
+            display: block;
+            transition: opacity 0.3s;
+        }
+        .project-image.lvol-cover { object-position: center center; }
+        footer {
+            padding: 60px 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .theme-toggle {
+            position: fixed;
+            bottom: 24px; right: 24px;
+            z-index: 1001;
+            width: 40px; height: 40px;
+            background: var(--card-bg);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle:hover { transform: scale(1.1); }
+        .theme-toggle svg { width: 20px; height: 20px; fill: var(--text); transition: opacity 0.3s ease; }
+        .moon-icon { display: block; }
+        .sun-icon { display: none; }
+        [data-theme="light"] .moon-icon { display: none; }
+        [data-theme="light"] .sun-icon { display: block; }
+        /* Mobile menu button */
+        .menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 1002;
+        }
+        .menu-btn span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--text);
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg);
+            z-index: 1001;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+        }
+        .mobile-nav.active { display: flex; }
+        .mobile-nav a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 24px;
+            font-weight: 500;
+        }
+        .close-menu {
+            position: absolute;
+            top: 30px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 32px;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .header-content { padding: 0 20px; }
+            header { padding: 20px 0; }
+            nav { display: none; }
+            .menu-btn { display: block; }
+            main { padding-top: 70px; }
+            .project-image { height: 40vh; min-height: 250px; }
+            .project-title {
+                opacity: 1;
+                transform: translateY(0);
+                font-size: 24px;
+                bottom: 20px;
+                left: 20px;
+            }
+            .project-card::before { opacity: 0.3; }
+            footer { padding: 40px 20px; }
+            .theme-toggle {
+                bottom: 16px;
+                right: 16px;
+                width: 44px;
+                height: 44px;
+            }
+        }
+        @media (max-width: 480px) {
+            .project-image { height: 35vh; min-height: 200px; }
+            .project-title { font-size: 20px; bottom: 16px; left: 16px; }
+        }
+        header.hidden { transform: translateY(-100%); transition: transform 0.3s ease-in-out; }
+        header:not(.hidden) { transform: translateY(0); transition: none; }
+    </style>
+</head>
+<body>
+    <header id="main-header">
+        <div class="header-content">
+            <a href="index.html" class="logo">sam.brott</a>
+            <nav>
+                <a href="index.html">Work</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <button class="menu-btn" onclick="openMobileNav()" aria-label="Open menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+    <div class="mobile-nav" id="mobile-nav">
+        <button class="close-menu" onclick="closeMobileNav()" aria-label="Close menu">&times;</button>
+        <a href="index.html" onclick="closeMobileNav()">Work</a>
+        <a href="about.html" onclick="closeMobileNav()">About</a>
+        <a href="contact.html" onclick="closeMobileNav()">Contact</a>
+    </div>
+    <main>
+        <div class="projects-grid">
+            <a href="rehearsal.html" class="project-card">
+                <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047277/Nathan_Sticky_Note_Color_V2_copy_tffcwn.png" alt="HBO's The Rehearsal" class="project-image" />
+                <span class="project-title">The Rehearsal</span>
+            </a>
+            <a href="bottlecap.html" class="project-card">
+                <video class="project-image" autoplay muted loop playsinline>
+                    <source src="https://res.cloudinary.com/dz9d0grpe/video/upload/v1770047246/Bottlecap-Back-GIF_1_wa5lmb.mp4" type="video/mp4" />
+                </video>
+                <span class="project-title">Coors Banquet</span>
+            </a>
+            <a href="lvol.html" class="project-card">
+                <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047242/alternate_copy_boclcx.png" alt="Lady Vol Hockey" class="project-image lvol-cover" />
+                <span class="project-title">Lady Vol Hockey</span>
+            </a>
+            <a href="postcards.html" class="project-card">
+                <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047264/DSC_0127_copy_arcwlr.jpg" alt="Postcards" class="project-image" />
+                <span class="project-title">Postcards</span>
+            </a>
+            <a href="pamphlets.html" class="project-card">
+                <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047242/DSC_0208_lvzjjw.png" alt="Museum Pamphlets" class="project-image" />
+                <span class="project-title">Museum Pamphlets</span>
+            </a>
+            <a href="hotsauce.html" class="project-card" id="hotsauce-card">
+                <video class="project-image" id="hotsauce-video" autoplay muted loop playsinline>
+                    <source src="https://res.cloudinary.com/dz9d0grpe/video/upload/v1770054449/Wide_angle_3_sauce_vid_mpxzm1.mov" type="video/quicktime" />
+                    <source src="https://res.cloudinary.com/dz9d0grpe/video/upload/v1770054449/Wide_angle_3_sauce_vid_mpxzm1.mov" type="video/mp4" />
+                </video>
+                <span class="project-title">Hot Sauce</span>
+            </a>
+        </div>
+    </main>
+    <footer>sam.brott © All Rights Reserved.</footer>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <svg class="moon-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg class="sun-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="5" fill="#000"/>
+            <line x1="12" y1="1" x2="12" y2="3" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="12" y1="21" x2="12" y2="23" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="1" y1="12" x2="3" y2="12" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="21" y1="12" x2="23" y2="12" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </button>
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        let lastScrollTop = 0;
+        const header = document.getElementById('main-header');
+        const scrollThreshold = 100;
+        window.addEventListener('scroll', function() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollTop > scrollThreshold) {
+                if (scrollTop > lastScrollTop) {
+                    header.classList.add('hidden');
+                } else if (scrollTop === 0) {
+                    header.classList.remove('hidden');
+                }
+            } else {
+                header.classList.remove('hidden');
+            }
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+        });
+        const hotsauceCard = document.getElementById('hotsauce-card');
+        const hotsauceVideo = document.getElementById('hotsauce-video');
+        hotsauceCard.addEventListener('mouseenter', function() { hotsauceVideo.muted = false; });
+        hotsauceCard.addEventListener('mouseleave', function() { hotsauceVideo.muted = true; });
+
+        // Mobile nav
+        function openMobileNav() {
+            document.getElementById('mobile-nav').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeMobileNav() {
+            document.getElementById('mobile-nav').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    </script>
+</body>
+</html>

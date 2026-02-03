@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hot Sauce | sam.brott</title>
+    <style>
+        :root {
+            --bg: #000;
+            --text: #fff;
+            --text-muted: #888;
+            --border: #222;
+            --card-bg: #111;
+        }
+
+        [data-theme="light"] {
+            --bg: #fff;
+            --text: #000;
+            --text-muted: #666;
+            --border: #e0e0e0;
+            --card-bg: #f5f5f5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: var(--bg);
+            padding: 24px 0;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        nav {
+            display: flex;
+            gap: 32px;
+        }
+
+        nav a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 400;
+            transition: opacity 0.3s;
+        }
+
+        nav a:hover {
+            opacity: 0.6;
+        }
+
+        main {
+            padding-top: 100px;
+            padding-bottom: 80px;
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero {
+            max-width: 1200px;
+            margin: 0 auto 40px;
+            padding: 0 40px;
+        }
+
+        .hero h1 {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.03em;
+        }
+
+        .hero p {
+            font-size: 16px;
+            color: var(--text-muted);
+            max-width: 600px;
+        }
+
+        .content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .content video {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 4px;
+        }
+
+        .three-carousel-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .carousel-item {
+            position: relative;
+        }
+
+        .carousel {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        .carousel-track {
+            display: flex;
+            transition: transform 0.3s ease;
+        }
+
+        .carousel-slide {
+            min-width: 100%;
+            flex-shrink: 0;
+        }
+
+        .carousel-slide img {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .carousel-slide img:hover {
+            transform: scale(1.02);
+        }
+
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+            z-index: 10;
+        }
+
+        .carousel-nav:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .carousel-prev { left: 8px; }
+        .carousel-next { right: 8px; }
+
+        .project-nav {
+            max-width: 1200px;
+            margin: 60px auto 0;
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .project-nav a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 15px;
+            transition: opacity 0.3s;
+        }
+
+        .project-nav a:hover {
+            opacity: 0.6;
+        }
+
+        .prev-project {
+            text-align: left;
+        }
+
+        .next-project {
+            text-align: right;
+        }
+
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        .lightbox-content {
+            position: relative;
+            width: 90vw;
+            height: 90vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox-content img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 4px;
+            cursor: zoom-in;
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform-origin: center center;
+        }
+
+        .lightbox-content img.zoomed {
+            cursor: grab;
+            transform: scale(2.5);
+        }
+
+        .lightbox-content img.zoomed:active {
+            cursor: grabbing;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+            z-index: 2001;
+        }
+
+        .lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+            z-index: 2001;
+        }
+
+        .lightbox-nav:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .lightbox-prev { left: 20px; }
+        .lightbox-next { right: 20px; }
+
+        .lightbox-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1001;
+            width: 40px;
+            height: 40px;
+            background: var(--card-bg);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text);
+            transition: opacity 0.3s ease;
+        }
+
+        .moon-icon { display: block; }
+        .sun-icon { display: none; }
+
+        [data-theme="light"] .moon-icon { display: none; }
+        [data-theme="light"] .sun-icon { display: block; }
+
+        /* Mobile menu button */
+        .menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 1002;
+        }
+        .menu-btn span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--text);
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg);
+            z-index: 1001;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+        }
+        .mobile-nav.active { display: flex; }
+        .mobile-nav a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 24px;
+            font-weight: 500;
+        }
+        .close-menu {
+            position: absolute;
+            top: 24px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 32px;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .header-content, .hero, .content, .project-nav {
+                padding: 0 16px;
+            }
+            header { padding: 16px 0; }
+            nav { display: none; }
+            .menu-btn { display: block; }
+            main { padding-top: 80px; padding-bottom: 60px; }
+            .hero { margin-bottom: 24px; }
+            .hero h1 { font-size: 28px; }
+            .hero p { font-size: 14px; }
+            .content { gap: 16px; }
+            .three-carousel-row { grid-template-columns: 1fr; gap: 16px; }
+            .carousel-slide img { height: 280px; }
+            .carousel-nav { width: 36px; height: 36px; }
+            .project-nav { margin-top: 40px; flex-direction: column; gap: 16px; text-align: center; }
+            .project-nav a { font-size: 14px; }
+            .lightbox-nav { width: 44px; height: 44px; font-size: 20px; }
+            .lightbox-prev { left: 8px; }
+            .lightbox-next { right: 8px; }
+            .lightbox-close { top: 12px; right: 12px; width: 44px; height: 44px; }
+            .lightbox-counter { bottom: 12px; font-size: 12px; }
+            .theme-toggle { bottom: 16px; right: 16px; width: 44px; height: 44px; }
+        }
+        @media (max-width: 480px) {
+            .hero h1 { font-size: 24px; }
+            .carousel-slide img { height: 220px; }
+        }
+
+        header.hidden {
+            transform: translateY(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+  </head>
+  <body>
+    <header id="main-header">
+        <div class="header-content">
+            <a href="index.html" class="logo">sam.brott</a>
+            <nav>
+                <a href="index.html">Work</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <button class="menu-btn" onclick="openMobileNav()" aria-label="Open menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+    <div class="mobile-nav" id="mobile-nav">
+        <button class="close-menu" onclick="closeMobileNav()" aria-label="Close menu">&times;</button>
+        <a href="index.html" onclick="closeMobileNav()">Work</a>
+        <a href="about.html" onclick="closeMobileNav()">About</a>
+        <a href="contact.html" onclick="closeMobileNav()">Contact</a>
+    </div>
+
+    <main>
+      <section class="hero fade-in">
+        <h1>Hot Sauce</h1>
+        <p>Packaging design for a line of tropical fruit-infused hot sauces inspired by Puerto Rican flavors.</p>
+      </section>
+
+      <div class="content">
+        <video class="fade-in" autoplay muted loop playsinline>
+          <source src="https://res.cloudinary.com/dz9d0grpe/video/upload/v1770047301/close_view_3_sauce_vid_aaqz7e.mp4" type="video/mp4" />
+        </video>
+
+        <div class="three-carousel-row fade-in">
+          <!-- Guava Carousel -->
+          <div class="carousel-item">
+            <div class="carousel" data-carousel="guava">
+              <div class="carousel-track">
+                <div class="carousel-slide"><img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047240/Guava_Front-Edit_ak5bxr.jpg" alt="Guava Front" /></div>
+                <div class="carousel-slide"><img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047921/Guava_Right-Edit_tjws4a.jpg" alt="Guava Left" /></div>
+                <div class="carousel-slide"><img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047921/Guava_Right-Edit_tjws4a.jpg" alt="Guava Right" /></div>
+              </div>
+              <button class="carousel-nav carousel-prev" onclick="moveCarousel('guava', -1)">‹</button>
+              <button class="carousel-nav carousel-next" onclick="moveCarousel('guava', 1)">›</button>
+            </div>
+          </div>
+
+          <!-- Papaya Carousel -->
+          <div class="carousel-item">
+            <div class="carousel" data-carousel="papaya">
+              <div class="carousel-track">
+                <div class="carousel-slide"><img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047257/Papaya_Front-Edit_iceqep.jpg" alt="Papaya Front" /></div>
+                <div class="carousel-slide"><img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047241/Papaya_Left-Edit_gsks1i.jpg" alt="Papaya Left" /></div>
+                <div class="carousel-slide"><img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047244/Papaya_Right-Edit_ysrrfg.jpg" alt="Papaya Right" /></div>
+              </div>
+              <button class="carousel-nav carousel-prev" onclick="moveCarousel('papaya', -1)">‹</button>
+              <button class="carousel-nav carousel-next" onclick="moveCarousel('papaya', 1)">›</button>
+            </div>
+          </div>
+
+          <!-- Parcha Carousel -->
+          <div class="carousel-item">
+            <div class="carousel" data-carousel="parcha">
+              <div class="carousel-track">
+                <div class="carousel-slide"><img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047240/Parcha_Front-Edit_ddfipv.jpg" alt="Parcha Front" /></div>
+                <div class="carousel-slide"><img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047240/Parcha_Left-Edit_blpnlb.jpg" alt="Parcha Left" /></div>
+                <div class="carousel-slide"><img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047240/Parcha_Right-Edit_jcvqmc.jpg" alt="Parcha Right" /></div>
+              </div>
+              <button class="carousel-nav carousel-prev" onclick="moveCarousel('parcha', -1)">‹</button>
+              <button class="carousel-nav carousel-next" onclick="moveCarousel('parcha', 1)">›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="project-nav fade-in">
+        <a href="pamphlets.html" class="prev-project">← Back: Museum Pamphlets</a>
+        <a href="rehearsal.html" class="next-project">Next: The Rehearsal →</a>
+      </div>
+    </main>
+
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" onclick="closeLightbox()">×</button>
+        <button class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1)">‹</button>
+        <div class="lightbox-content">
+            <img id="lightbox-img" src="" alt="" />
+        </div>
+        <button class="lightbox-nav lightbox-next" onclick="navigateLightbox(1)">›</button>
+        <div class="lightbox-counter" id="lightbox-counter"></div>
+    </div>
+
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <svg class="moon-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg class="sun-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="5" fill="#000"/>
+            <line x1="12" y1="1" x2="12" y2="3" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="12" y1="21" x2="12" y2="23" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="1" y1="12" x2="3" y2="12" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="21" y1="12" x2="23" y2="12" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </button>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        let lastScrollTop = 0;
+        const header = document.getElementById('main-header');
+        window.addEventListener('scroll', () => {
+            const st = window.pageYOffset;
+            if (st > 100) {
+                header.classList.toggle('hidden', st > lastScrollTop);
+            } else {
+                header.classList.remove('hidden');
+            }
+            lastScrollTop = st <= 0 ? 0 : st;
+        });
+
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+        fadeElements.forEach(el => observer.observe(el));
+
+        // Carousel functionality
+        const carouselState = {
+            guava: 0,
+            papaya: 0,
+            parcha: 0
+        };
+
+        function moveCarousel(name, direction) {
+            const carousel = document.querySelector(`[data-carousel="${name}"]`);
+            const track = carousel.querySelector('.carousel-track');
+            const slides = carousel.querySelectorAll('.carousel-slide');
+            const totalSlides = slides.length;
+
+            carouselState[name] += direction;
+            if (carouselState[name] < 0) carouselState[name] = totalSlides - 1;
+            if (carouselState[name] >= totalSlides) carouselState[name] = 0;
+
+            track.style.transform = `translateX(-${carouselState[name] * 100}%)`;
+        }
+
+        // Lightbox for all carousel images
+        const images = Array.from(document.querySelectorAll('.carousel-slide img'));
+        let currentIndex = 0;
+
+        images.forEach((img, index) => {
+            img.addEventListener('click', () => openLightbox(index));
+        });
+
+        let isZoomed = false;
+        let panX = 0;
+        let panY = 0;
+        const zoomScale = 2.5;
+
+        function openLightbox(index) {
+            currentIndex = index;
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const counter = document.getElementById('lightbox-counter');
+            lightboxImg.src = images[currentIndex].src;
+            lightboxImg.alt = images[currentIndex].alt;
+            counter.textContent = `${currentIndex + 1} / ${images.length}`;
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            resetZoom();
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            document.body.style.overflow = '';
+            resetZoom();
+        }
+
+        function resetZoom() {
+            const lightboxImg = document.getElementById('lightbox-img');
+            isZoomed = false;
+            panX = 0;
+            panY = 0;
+            lightboxImg.classList.remove('zoomed');
+            lightboxImg.style.transform = '';
+            lightboxImg.style.cursor = 'zoom-in';
+        }
+
+        function navigateLightbox(direction) {
+            resetZoom();
+            currentIndex += direction;
+            if (currentIndex < 0) currentIndex = images.length - 1;
+            if (currentIndex >= images.length) currentIndex = 0;
+            const lightboxImg = document.getElementById('lightbox-img');
+            const counter = document.getElementById('lightbox-counter');
+            lightboxImg.src = images[currentIndex].src;
+            lightboxImg.alt = images[currentIndex].alt;
+            counter.textContent = `${currentIndex + 1} / ${images.length}`;
+        }
+
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxContent = document.querySelector('.lightbox-content');
+        
+        lightboxImg.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!isZoomed) {
+                isZoomed = true;
+                lightboxImg.classList.add('zoomed');
+                
+                const rect = lightboxImg.getBoundingClientRect();
+                const clickX = (e.clientX - rect.left) / rect.width;
+                const clickY = (e.clientY - rect.top) / rect.height;
+                
+                panX = (0.5 - clickX) * rect.width * (zoomScale - 1);
+                panY = (0.5 - clickY) * rect.height * (zoomScale - 1);
+                
+                const maxPanX = rect.width * (zoomScale - 1) / 2;
+                const maxPanY = rect.height * (zoomScale - 1) / 2;
+                panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
+                panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
+                
+                lightboxImg.style.transform = `scale(${zoomScale}) translate(${panX / zoomScale}px, ${panY / zoomScale}px)`;
+            } else {
+                resetZoom();
+            }
+        });
+
+        lightboxContent.addEventListener('mousemove', (e) => {
+            if (!isZoomed) return;
+            
+            const rect = lightboxContent.getBoundingClientRect();
+            const mouseX = (e.clientX - rect.left) / rect.width;
+            const mouseY = (e.clientY - rect.top) / rect.height;
+            
+            const imgWidth = lightboxImg.naturalWidth ? lightboxImg.offsetWidth : rect.width;
+            const imgHeight = lightboxImg.naturalHeight ? lightboxImg.offsetHeight : rect.height;
+            
+            const maxPanX = imgWidth * (zoomScale - 1) / 2;
+            const maxPanY = imgHeight * (zoomScale - 1) / 2;
+            
+            panX = (0.5 - mouseX) * maxPanX * 2;
+            panY = (0.5 - mouseY) * maxPanY * 2;
+            
+            lightboxImg.style.transform = `scale(${zoomScale}) translate(${panX / zoomScale}px, ${panY / zoomScale}px)`;
+        });
+
+        document.addEventListener('keydown', (e) => {
+            const lightbox = document.getElementById('lightbox');
+            if (!lightbox.classList.contains('active')) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft' && !isZoomed) navigateLightbox(-1);
+            if (e.key === 'ArrowRight' && !isZoomed) navigateLightbox(1);
+        });
+
+        document.getElementById('lightbox').addEventListener('click', (e) => {
+            if (e.target.id === 'lightbox' && !isZoomed) closeLightbox();
+        });
+
+        // Mobile nav
+        function openMobileNav() {
+            document.getElementById('mobile-nav').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeMobileNav() {
+            document.getElementById('mobile-nav').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Touch swipe for lightbox
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const lightbox = document.getElementById('lightbox');
+        lightbox.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        lightbox.addEventListener('touchend', (e) => {
+            if (isZoomed) return;
+            touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) navigateLightbox(1);
+                else navigateLightbox(-1);
+            }
+        }, { passive: true });
+    </script>
+  </body>
+</html>

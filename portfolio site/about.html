@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>About | sam.brott</title>
+    <style>
+        :root {
+            --bg: #000;
+            --text: #fff;
+            --text-muted: #888;
+            --border: #222;
+            --card-bg: #111;
+        }
+
+        [data-theme="light"] {
+            --bg: #fff;
+            --text: #000;
+            --text-muted: #666;
+            --border: #e0e0e0;
+            --card-bg: #f5f5f5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            transition: background 0.3s ease, color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: var(--bg);
+            padding: 24px 0;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        nav {
+            display: flex;
+            gap: 32px;
+        }
+
+        nav a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 400;
+            transition: opacity 0.3s;
+        }
+
+        nav a:hover {
+            opacity: 0.6;
+        }
+
+        main {
+            flex: 1;
+            padding-top: 120px;
+            padding-bottom: 80px;
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .about-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        .about-content h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            letter-spacing: -0.03em;
+        }
+
+        .about-content p {
+            font-size: 18px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            line-height: 1.8;
+        }
+
+        .about-content p:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1001;
+            width: 40px;
+            height: 40px;
+            background: var(--card-bg);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text);
+            transition: opacity 0.3s ease;
+        }
+
+        .moon-icon { display: block; }
+        .sun-icon { display: none; }
+
+        [data-theme="light"] .moon-icon { display: none; }
+        [data-theme="light"] .sun-icon { display: block; }
+
+        /* Mobile menu button */
+        .menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 1002;
+        }
+        .menu-btn span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--text);
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg);
+            z-index: 1001;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+        }
+        .mobile-nav.active { display: flex; }
+        .mobile-nav a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 24px;
+            font-weight: 500;
+        }
+        .close-menu {
+            position: absolute;
+            top: 24px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 32px;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .header-content, .about-content {
+                padding: 0 16px;
+            }
+            header { padding: 16px 0; }
+            nav { display: none; }
+            .menu-btn { display: block; }
+            main { padding-top: 80px; padding-bottom: 60px; }
+            .about-content h1 { font-size: 32px; margin-bottom: 24px; }
+            .about-content p { font-size: 16px; margin-bottom: 20px; }
+            .theme-toggle { bottom: 16px; right: 16px; width: 44px; height: 44px; }
+        }
+        @media (max-width: 480px) {
+            .about-content h1 { font-size: 28px; }
+            .about-content p { font-size: 15px; }
+        }
+
+        header.hidden {
+            transform: translateY(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+  </head>
+  <body>
+    <header id="main-header">
+        <div class="header-content">
+            <a href="index.html" class="logo">sam.brott</a>
+            <nav>
+                <a href="index.html">Work</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <button class="menu-btn" onclick="openMobileNav()" aria-label="Open menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+    <div class="mobile-nav" id="mobile-nav">
+        <button class="close-menu" onclick="closeMobileNav()" aria-label="Close menu">&times;</button>
+        <a href="index.html" onclick="closeMobileNav()">Work</a>
+        <a href="about.html" onclick="closeMobileNav()">About</a>
+        <a href="contact.html" onclick="closeMobileNav()">Contact</a>
+    </div>
+
+    <main>
+      <div class="about-content fade-in">
+        <h1>About</h1>
+        <p>I'm Sam Brott, a designer and creative based in Knoxville, Tennessee. I specialize in branding, packaging design, and visual storytelling.</p>
+        <p>My work spans across various mediums including print, digital, and motion design. I'm passionate about creating meaningful visual experiences that connect with people.</p>
+        <p>When I'm not designing, you can find me exploring new places, taking photos, or working on personal creative projects.</p>
+      </div>
+    </main>
+
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <svg class="moon-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg class="sun-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="5" fill="#000"/>
+            <line x1="12" y1="1" x2="12" y2="3" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="12" y1="21" x2="12" y2="23" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="1" y1="12" x2="3" y2="12" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="21" y1="12" x2="23" y2="12" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </button>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        let lastScrollTop = 0;
+        const header = document.getElementById('main-header');
+        window.addEventListener('scroll', () => {
+            const st = window.pageYOffset;
+            if (st > 100) {
+                header.classList.toggle('hidden', st > lastScrollTop);
+            } else {
+                header.classList.remove('hidden');
+            }
+            lastScrollTop = st <= 0 ? 0 : st;
+        });
+
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+        fadeElements.forEach(el => observer.observe(el));
+
+        // Mobile nav
+        function openMobileNav() {
+            document.getElementById('mobile-nav').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeMobileNav() {
+            document.getElementById('mobile-nav').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    </script>
+  </body>
+</html>
