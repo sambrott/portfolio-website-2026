@@ -532,7 +532,7 @@
         <button class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1)">‹</button>
         <div class="lightbox-content" id="lightbox-content">
             <img id="lightbox-img" src="" alt="" />
-            <video id="lightbox-video" src="" autoplay loop muted playsinline style="display:none;"></video>
+            <video id="lightbox-video" src="" autoplay loop playsinline style="display:none;"></video>
         </div>
         <button class="lightbox-nav lightbox-next" onclick="navigateLightbox(1)">›</button>
         <div class="lightbox-counter" id="lightbox-counter"></div>
@@ -662,7 +662,11 @@
                 lightboxImg.style.display = 'none';
                 lightboxVideo.style.display = 'block';
                 lightboxVideo.src = item.src;
-                lightboxVideo.play().catch(() => {});
+                lightboxVideo.muted = false;
+                lightboxVideo.play().catch(() => {
+                    lightboxVideo.muted = true;
+                    lightboxVideo.play().catch(() => {});
+                });
             } else {
                 lightboxVideo.style.display = 'none';
                 lightboxVideo.pause();

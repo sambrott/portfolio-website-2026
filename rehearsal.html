@@ -677,7 +677,7 @@
       <div class="content">
         <img class="fade-in" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047277/Nathan_Sticky_Note_Color_V2_copy_tffcwn.png" alt="The Rehearsal poster" />
         <img class="fade-in" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047274/Pill_Spill_copy_zbp55d.png" alt="Pill spill on blue background" />
-        <video class="fade-in" autoplay muted loop playsinline webkit-playsinline preload="auto">
+        <video class="fade-in" autoplay muted loop playsinline webkit-playsinline preload="auto" poster="https://res.cloudinary.com/dz9d0grpe/video/upload/so_0/v1770047295/Plane_Pills_1_copy_uymqy3.jpg" style="aspect-ratio: 16/9; background: #000;">
           <source src="https://res.cloudinary.com/dz9d0grpe/video/upload/v1770047295/Plane_Pills_1_copy_uymqy3.mp4" type="video/mp4" />
         </video>
         <img class="fade-in" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047282/Torn_1_copy_aexinl.png" alt="Torn face poster" />
@@ -823,8 +823,11 @@
                     vid.pause();
                 }
             });
-        }, { threshold: 0.25 });
-        document.querySelectorAll('.content video').forEach(v => videoObserver.observe(v));
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.content video').forEach(v => {
+            videoObserver.observe(v);
+            v.play().catch(() => {});
+        });
 
         // Media Lightbox (images + videos)
         const mediaItems = [];
