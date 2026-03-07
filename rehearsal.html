@@ -816,6 +816,13 @@
         }, { threshold: 0.1 });
         fadeElements.forEach(el => observer.observe(el));
 
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            document.querySelectorAll('.content video source').forEach(src => {
+                src.src = src.src.replace('/video/upload/', '/video/upload/q_auto,br_2m,f_auto/');
+                src.parentElement.load();
+            });
+        }
+
         const videoObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 const vid = entry.target;
