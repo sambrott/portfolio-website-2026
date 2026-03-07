@@ -583,9 +583,17 @@
 
         // Touch swipe for lightbox
         let touchStartX = 0;
+        let wasPinching = false;
         const lightbox = document.getElementById('lightbox');
-        lightbox.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].clientX; }, { passive: true });
+        lightbox.addEventListener('touchstart', (e) => {
+            wasPinching = e.touches.length > 1;
+            if (!wasPinching) touchStartX = e.changedTouches[0].clientX;
+        }, { passive: true });
+        lightbox.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 1) wasPinching = true;
+        }, { passive: true });
         lightbox.addEventListener('touchend', (e) => {
+            if (wasPinching) { wasPinching = false; return; }
             const dx = e.changedTouches[0].clientX - touchStartX;
             if (Math.abs(dx) > 50) { dx < 0 ? navigateLightbox(1) : navigateLightbox(-1); }
         }, { passive: true });
