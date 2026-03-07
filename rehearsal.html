@@ -816,10 +816,20 @@
         }, { threshold: 0.1 });
         fadeElements.forEach(el => observer.observe(el));
 
-        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-            document.querySelectorAll('.content video source').forEach(src => {
-                src.src = src.src.replace('/video/upload/', '/video/upload/q_auto,br_2m,f_auto/');
-                src.parentElement.load();
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+            document.querySelectorAll('.content video').forEach(vid => {
+                const poster = vid.getAttribute('poster');
+                if (poster) {
+                    const img = document.createElement('img');
+                    img.src = poster;
+                    img.alt = 'Video frame';
+                    img.style.width = '100%';
+                    img.style.height = 'auto';
+                    img.style.display = 'block';
+                    img.style.borderRadius = '4px';
+                    vid.parentNode.replaceChild(img, vid);
+                }
             });
         }
 
