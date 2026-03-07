@@ -177,12 +177,14 @@
             border-radius: 4px;
         }
 
-        .content img {
+        .content img,
+        .content video {
             cursor: pointer;
             transition: transform 0.2s ease;
         }
 
-        .content img:hover {
+        .content img:hover,
+        .content video:hover {
             transform: scale(1.01);
         }
 
@@ -196,6 +198,80 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+        }
+
+        .awards-section {
+            max-width: 1200px;
+            margin: 60px auto 24px;
+            padding: 0 40px;
+        }
+
+        .awards-section h2 {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.03em;
+        }
+
+        .awards-section p {
+            font-size: 16px;
+            color: var(--text-muted);
+            max-width: 600px;
+        }
+
+        .awards-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .award-card {
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        .award-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.2s ease;
+        }
+
+        .award-card:hover img {
+            transform: scale(1.01);
+        }
+
+        .award-card__overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .award-card:hover .award-card__overlay {
+            opacity: 1;
+        }
+
+        .award-card__overlay img {
+            width: 30%;
+            max-width: 120px;
+            height: auto;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
         }
 
         .project-nav {
@@ -253,23 +329,12 @@
             justify-content: center;
         }
 
-        .lightbox-content img {
+        .lightbox-content img,
+        .lightbox-content video {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
             border-radius: 4px;
-            cursor: zoom-in;
-            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            transform-origin: center center;
-        }
-
-        .lightbox-content img.zoomed {
-            cursor: grab;
-            transform: scale(2.5);
-        }
-
-        .lightbox-content img.zoomed:active {
-            cursor: grabbing;
         }
 
         .lightbox-close {
@@ -278,8 +343,8 @@
             right: 20px;
             width: 40px;
             height: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             color: #fff;
             font-size: 24px;
@@ -292,7 +357,7 @@
         }
 
         .lightbox-close:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.8);
         }
 
         .lightbox-nav {
@@ -301,8 +366,8 @@
             transform: translateY(-50%);
             width: 50px;
             height: 50px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             color: #fff;
             font-size: 24px;
@@ -315,16 +380,12 @@
         }
 
         .lightbox-nav:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.8);
         }
 
         .lightbox-prev { left: 20px; }
         .lightbox-next { right: 20px; }
 
-        .lightbox-nav.hidden-when-zoomed {
-            opacity: 0;
-            pointer-events: none;
-        }
 
         /* Award Lightbox */
         .award-lightbox {
@@ -377,8 +438,8 @@
             right: 20px;
             width: 40px;
             height: 40px;
-            background: rgba(255,255,255,0.1);
-            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             cursor: pointer;
             z-index: 2001;
@@ -387,7 +448,7 @@
             justify-content: center;
             transition: background 0.3s;
         }
-        .award-lightbox__close:hover { background: rgba(255,255,255,0.2); }
+        .award-lightbox__close:hover { background: rgba(0, 0, 0, 0.8); }
         .award-lightbox__close::after {
             content: '';
             display: block;
@@ -403,8 +464,8 @@
             transform: translateY(-50%);
             width: 50px;
             height: 50px;
-            background: rgba(255,255,255,0.1);
-            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             cursor: pointer;
             z-index: 2001;
@@ -413,7 +474,7 @@
             justify-content: center;
             transition: background 0.3s;
         }
-        .award-lightbox__nav:hover { background: rgba(255,255,255,0.2); }
+        .award-lightbox__nav:hover { background: rgba(0, 0, 0, 0.8); }
         .award-lightbox__prev { left: 20px; }
         .award-lightbox__next { right: 20px; }
         .award-lightbox__prev::after {
@@ -529,7 +590,7 @@
             cursor: pointer;
         }
         @media (max-width: 768px) {
-            .header-content, .hero, .content, .project-nav {
+            .header-content, .hero, .content, .project-nav, .awards-section {
                 padding: 0 16px;
             }
             header { padding: 16px 0; }
@@ -545,6 +606,10 @@
             .title-awards .award-icon { width: 70px; height: 70px; }
             .content { gap: 16px; }
             .two-col { grid-template-columns: 1fr; gap: 12px; }
+            .awards-grid { grid-template-columns: 1fr; gap: 12px; padding: 0 16px; }
+            .awards-section { margin: 40px auto 16px; }
+            .awards-section h2 { font-size: 28px; }
+            .awards-section p { font-size: 14px; }
             .project-nav { margin-top: 40px; gap: 16px; }
             .project-nav a { font-size: 14px; }
             .lightbox-nav { width: 44px; height: 44px; font-size: 20px; }
@@ -553,6 +618,13 @@
             .lightbox-close { top: 12px; right: 12px; width: 44px; height: 44px; }
             .lightbox-counter { bottom: 12px; font-size: 12px; }
             .theme-toggle { bottom: 16px; right: 16px; width: 44px; height: 44px; }
+            .award-lightbox__close { top: 12px; right: 12px; width: 44px; height: 44px; }
+            .award-lightbox__nav { width: 44px; height: 44px; }
+            .award-lightbox__prev { left: 8px; }
+            .award-lightbox__next { right: 8px; }
+            .award-lightbox__inner { margin: 60px auto; padding: 24px 16px; }
+            .award-lightbox__title { font-size: 24px; }
+            .award-lightbox__desc { font-size: 15px; }
         }
         @media (max-width: 480px) {
             .hero h1 { font-size: 24px; }
@@ -605,7 +677,7 @@
       <div class="content">
         <img class="fade-in" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047277/Nathan_Sticky_Note_Color_V2_copy_tffcwn.png" alt="The Rehearsal poster" />
         <img class="fade-in" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047274/Pill_Spill_copy_zbp55d.png" alt="Pill spill on blue background" />
-        <video class="fade-in" autoplay muted loop playsinline>
+        <video class="fade-in" autoplay muted loop playsinline webkit-playsinline preload="auto">
           <source src="https://res.cloudinary.com/dz9d0grpe/video/upload/v1770047295/Plane_Pills_1_copy_uymqy3.mp4" type="video/mp4" />
         </video>
         <img class="fade-in" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047282/Torn_1_copy_aexinl.png" alt="Torn face poster" />
@@ -613,6 +685,32 @@
         <div class="two-col fade-in">
           <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047248/max_site_mockup_copy_bjcsv6.png" alt="Max site mockup" />
           <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047257/max_site_mockup_horiz__copy_ajapxn.png" alt="Max site mockup horizontal" />
+        </div>
+      </div>
+
+      <section class="awards-section fade-in">
+        <h2>Awards</h2>
+        <p>These awards were given by the American Advertising Federation at the Knoxville Chapter’s 2026 ADDY awards. The <strong>Best of Show</strong> and <strong>Judge’s Choice</strong> are the highest awards offered at the competition and the <strong>Silver ADDY</strong> award qualifies the work to be submitted for further competition at the regional level with potential for it to compete at the national level.</p>
+      </section>
+
+      <div class="awards-grid fade-in">
+        <div class="award-card" onclick="openAwardLightbox('best-of-show')">
+          <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1772851358/Best_of_Show_b1yann.jpg" alt="Best of Show Award" />
+          <div class="award-card__overlay">
+            <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1772857425/Best_of_show_icon_white_re5fda.png" alt="Best of Show icon" />
+          </div>
+        </div>
+        <div class="award-card" onclick="openAwardLightbox('judges-choice')">
+          <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1772851358/Judge_s_Choice_qmll69.jpg" alt="Judge's Choice Award" />
+          <div class="award-card__overlay">
+            <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1772857425/Judge_s_Choice_icon_white_syywfh.png" alt="Judge's Choice icon" />
+          </div>
+        </div>
+        <div class="award-card" onclick="openAwardLightbox('silver-addy')">
+          <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1772851358/Silver_ADDY_ocmouh.jpg" alt="Silver ADDY Award" />
+          <div class="award-card__overlay">
+            <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1772857425/Silver_ADDY_icon_white_fqwa8x.png" alt="Silver ADDY icon" />
+          </div>
         </div>
       </div>
 
@@ -657,8 +755,9 @@
     <div class="lightbox" id="lightbox">
         <button class="lightbox-close" onclick="closeLightbox()">×</button>
         <button class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1)">‹</button>
-        <div class="lightbox-content">
+        <div class="lightbox-content" id="lightbox-content">
             <img id="lightbox-img" src="" alt="" />
+            <video id="lightbox-video" src="" autoplay loop muted playsinline webkit-playsinline preload="auto" style="display:none;"></video>
         </div>
         <button class="lightbox-nav lightbox-next" onclick="navigateLightbox(1)">›</button>
         <div class="lightbox-counter" id="lightbox-counter"></div>
@@ -715,129 +814,73 @@
         }, { threshold: 0.1 });
         fadeElements.forEach(el => observer.observe(el));
 
-        // Image Lightbox
-        const images = Array.from(document.querySelectorAll('.content img'));
+        const videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const vid = entry.target;
+                if (entry.isIntersecting) {
+                    vid.play().catch(() => {});
+                } else {
+                    vid.pause();
+                }
+            });
+        }, { threshold: 0.25 });
+        document.querySelectorAll('.content video').forEach(v => videoObserver.observe(v));
+
+        // Media Lightbox (images + videos)
+        const mediaItems = [];
+        document.querySelectorAll('.content img, .content video').forEach(el => {
+            const idx = mediaItems.length;
+            mediaItems.push({ type: el.tagName === 'VIDEO' ? 'video' : 'image', src: el.tagName === 'VIDEO' ? (el.querySelector('source')?.src || el.src) : el.src, alt: el.alt || '' });
+            el.addEventListener('click', () => openLightbox(idx));
+        });
         let currentIndex = 0;
-        let isZoomed = false;
-        let panX = 0, panY = 0;
-        const zoomScale = 2.5;
         const lightboxImg = document.getElementById('lightbox-img');
-        const lightboxContent = document.querySelector('.lightbox-content');
-        const lightboxNavBtns = document.querySelectorAll('#lightbox .lightbox-nav');
+        const lightboxVideo = document.getElementById('lightbox-video');
+        const lightboxContent = document.getElementById('lightbox-content');
 
-        images.forEach((img, i) => img.addEventListener('click', () => openLightbox(i)));
-
-        function setNavVisibility() {
-            lightboxNavBtns.forEach(btn => btn.classList.toggle('hidden-when-zoomed', isZoomed));
-        }
-
-        function applyPan() {
-            lightboxImg.style.transform = `scale(${zoomScale}) translate(${panX / zoomScale}px, ${panY / zoomScale}px)`;
+        function showMedia(index) {
+            const item = mediaItems[index];
+            if (item.type === 'video') {
+                lightboxImg.style.display = 'none';
+                lightboxVideo.style.display = 'block';
+                lightboxVideo.src = item.src;
+                lightboxVideo.play().catch(() => {});
+            } else {
+                lightboxVideo.style.display = 'none';
+                lightboxVideo.pause();
+                lightboxImg.style.display = 'block';
+                lightboxImg.src = item.src;
+                lightboxImg.alt = item.alt;
+            }
+            document.getElementById('lightbox-counter').textContent = `${index + 1} / ${mediaItems.length}`;
         }
 
         function openLightbox(index) {
             currentIndex = index;
-            lightboxImg.src = images[currentIndex].src;
-            lightboxImg.alt = images[currentIndex].alt;
-            document.getElementById('lightbox-counter').textContent = `${currentIndex + 1} / ${images.length}`;
+            showMedia(currentIndex);
             document.getElementById('lightbox').classList.add('active');
             document.body.style.overflow = 'hidden';
-            resetZoom();
         }
 
         function closeLightbox() {
             document.getElementById('lightbox').classList.remove('active');
             document.body.style.overflow = '';
-            resetZoom();
-        }
-
-        function resetZoom() {
-            isZoomed = false; panX = 0; panY = 0;
-            lightboxImg.classList.remove('zoomed');
-            lightboxImg.style.transform = '';
-            lightboxImg.style.cursor = 'zoom-in';
-            setNavVisibility();
+            lightboxVideo.pause();
         }
 
         function navigateLightbox(direction) {
-            resetZoom();
+            lightboxVideo.pause();
             currentIndex += direction;
-            if (currentIndex < 0) currentIndex = images.length - 1;
-            if (currentIndex >= images.length) currentIndex = 0;
-            lightboxImg.src = images[currentIndex].src;
-            lightboxImg.alt = images[currentIndex].alt;
-            document.getElementById('lightbox-counter').textContent = `${currentIndex + 1} / ${images.length}`;
+            if (currentIndex < 0) currentIndex = mediaItems.length - 1;
+            if (currentIndex >= mediaItems.length) currentIndex = 0;
+            showMedia(currentIndex);
         }
-
-        lightboxImg.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (!isZoomed) {
-                isZoomed = true;
-                lightboxImg.classList.add('zoomed');
-                lightboxImg.style.cursor = 'grab';
-                const rect = lightboxImg.getBoundingClientRect();
-                const cx = (e.clientX - rect.left) / rect.width;
-                const cy = (e.clientY - rect.top) / rect.height;
-                const mX = rect.width * (zoomScale - 1) / 2;
-                const mY = rect.height * (zoomScale - 1) / 2;
-                panX = Math.max(-mX, Math.min(mX, (0.5 - cx) * mX * 2));
-                panY = Math.max(-mY, Math.min(mY, (0.5 - cy) * mY * 2));
-                applyPan();
-                setNavVisibility();
-            } else {
-                resetZoom();
-            }
-        });
-
-        // Smooth desktop pan with lerp
-        let panRAF = null, targetPanX = 0, targetPanY = 0;
-        function startPanLoop() {
-            function tick() {
-                if (!isZoomed) { panRAF = null; return; }
-                panX += (targetPanX - panX) * 0.4;
-                panY += (targetPanY - panY) * 0.4;
-                applyPan();
-                panRAF = requestAnimationFrame(tick);
-            }
-            if (!panRAF) panRAF = requestAnimationFrame(tick);
-        }
-
-        lightboxContent.addEventListener('mousemove', (e) => {
-            if (!isZoomed) return;
-            const r = lightboxContent.getBoundingClientRect();
-            const mx = (e.clientX - r.left) / r.width;
-            const my = (e.clientY - r.top) / r.height;
-            const mX = lightboxImg.offsetWidth * (zoomScale - 1) / 2;
-            const mY = lightboxImg.offsetHeight * (zoomScale - 1) / 2;
-            targetPanX = Math.max(-mX, Math.min(mX, (0.5 - mx) * mX * 2));
-            targetPanY = Math.max(-mY, Math.min(mY, (0.5 - my) * mY * 2));
-            startPanLoop();
-        });
-
-        // Mobile touch pan
-        let tpSX = 0, tpSY = 0, tpLX = 0, tpLY = 0;
-        lightboxContent.addEventListener('touchstart', (e) => {
-            if (!isZoomed || e.touches.length !== 1) return;
-            e.preventDefault();
-            tpSX = e.touches[0].clientX; tpSY = e.touches[0].clientY;
-            tpLX = panX; tpLY = panY;
-        }, { passive: false });
-        lightboxContent.addEventListener('touchmove', (e) => {
-            if (!isZoomed || e.touches.length !== 1) return;
-            e.preventDefault();
-            const mX = lightboxImg.offsetWidth * (zoomScale - 1) / 2;
-            const mY = lightboxImg.offsetHeight * (zoomScale - 1) / 2;
-            panX = Math.max(-mX, Math.min(mX, tpLX + (e.touches[0].clientX - tpSX)));
-            panY = Math.max(-mY, Math.min(mY, tpLY + (e.touches[0].clientY - tpSY)));
-            applyPan();
-        }, { passive: false });
 
         // Touch swipe to navigate + keyboard
         let touchStartX = 0;
         const lightbox = document.getElementById('lightbox');
         lightbox.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].clientX; }, { passive: true });
         lightbox.addEventListener('touchend', (e) => {
-            if (isZoomed) return;
             const dx = e.changedTouches[0].clientX - touchStartX;
             if (Math.abs(dx) > 50) { dx < 0 ? navigateLightbox(1) : navigateLightbox(-1); }
         }, { passive: true });
@@ -851,12 +894,12 @@
             }
             if (!document.getElementById('lightbox').classList.contains('active')) return;
             if (e.key === 'Escape') closeLightbox();
-            if (e.key === 'ArrowLeft' && !isZoomed) navigateLightbox(-1);
-            if (e.key === 'ArrowRight' && !isZoomed) navigateLightbox(1);
+            if (e.key === 'ArrowLeft') navigateLightbox(-1);
+            if (e.key === 'ArrowRight') navigateLightbox(1);
         });
 
         document.getElementById('lightbox').addEventListener('click', (e) => {
-            if (e.target.id === 'lightbox' && !isZoomed) closeLightbox();
+            if (e.target.id === 'lightbox') closeLightbox();
         });
 
         // Award Lightbox
@@ -904,6 +947,12 @@
             next.style.transition = '';
             active.style.transition = '';
         }
+
+        document.querySelectorAll('.award-lightbox').forEach(lb => {
+            lb.addEventListener('click', (e) => {
+                if (e.target === lb) closeActiveAwardLightbox();
+            });
+        });
 
         // Award lightbox touch swipe
         document.querySelectorAll('.award-lightbox').forEach(lb => {

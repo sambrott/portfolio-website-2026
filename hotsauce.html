@@ -260,23 +260,12 @@
             justify-content: center;
         }
 
-        .lightbox-content img {
+        .lightbox-content img,
+        .lightbox-content video {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
             border-radius: 4px;
-            cursor: zoom-in;
-            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            transform-origin: center center;
-        }
-
-        .lightbox-content img.zoomed {
-            cursor: grab;
-            transform: scale(2.5);
-        }
-
-        .lightbox-content img.zoomed:active {
-            cursor: grabbing;
         }
 
         .lightbox-close {
@@ -285,8 +274,8 @@
             right: 20px;
             width: 40px;
             height: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             color: #fff;
             font-size: 24px;
@@ -299,7 +288,7 @@
         }
 
         .lightbox-close:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.8);
         }
 
         .lightbox-nav {
@@ -308,8 +297,8 @@
             transform: translateY(-50%);
             width: 50px;
             height: 50px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             color: #fff;
             font-size: 24px;
@@ -322,16 +311,11 @@
         }
 
         .lightbox-nav:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.8);
         }
 
         .lightbox-prev { left: 20px; }
         .lightbox-next { right: 20px; }
-
-        .lightbox-nav.hidden-when-zoomed {
-            opacity: 0;
-            pointer-events: none;
-        }
 
         .lightbox-counter {
             position: absolute;
@@ -546,8 +530,9 @@
     <div class="lightbox" id="lightbox">
         <button class="lightbox-close" onclick="closeLightbox()">×</button>
         <button class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1)">‹</button>
-        <div class="lightbox-content">
+        <div class="lightbox-content" id="lightbox-content">
             <img id="lightbox-img" src="" alt="" />
+            <video id="lightbox-video" src="" autoplay loop muted playsinline style="display:none;"></video>
         </div>
         <button class="lightbox-nav lightbox-next" onclick="navigateLightbox(1)">›</button>
         <div class="lightbox-counter" id="lightbox-counter"></div>
@@ -648,147 +633,76 @@
             vObs.observe(video);
         });
 
-        // Lightbox for all carousel images
-        const images = Array.from(document.querySelectorAll('.carousel-slide img'));
-        let currentIndex = 0;
+        // Lightbox for video + carousel images
+        const mediaItems = [];
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxVideo = document.getElementById('lightbox-video');
+        const lightboxContent = document.getElementById('lightbox-content');
 
-        images.forEach((img, index) => {
-            img.addEventListener('click', () => openLightbox(index));
+        // Add the main video
+        document.querySelectorAll('.content > video').forEach(el => {
+            const idx = mediaItems.length;
+            mediaItems.push({ type: 'video', src: el.querySelector('source')?.src || el.src, alt: '' });
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', () => openLightbox(idx));
         });
 
-        let isZoomed = false;
-        let panX = 0;
-        let panY = 0;
-        const zoomScale = 4;
+        // Add carousel images
+        document.querySelectorAll('.carousel-slide img').forEach(img => {
+            const idx = mediaItems.length;
+            mediaItems.push({ type: 'image', src: img.src, alt: img.alt || '' });
+            img.addEventListener('click', () => openLightbox(idx));
+        });
+
+        let currentIndex = 0;
+
+        function showMedia(index) {
+            const item = mediaItems[index];
+            if (item.type === 'video') {
+                lightboxImg.style.display = 'none';
+                lightboxVideo.style.display = 'block';
+                lightboxVideo.src = item.src;
+                lightboxVideo.play().catch(() => {});
+            } else {
+                lightboxVideo.style.display = 'none';
+                lightboxVideo.pause();
+                lightboxImg.style.display = 'block';
+                lightboxImg.src = item.src;
+                lightboxImg.alt = item.alt;
+            }
+            document.getElementById('lightbox-counter').textContent = `${index + 1} / ${mediaItems.length}`;
+        }
 
         function openLightbox(index) {
             currentIndex = index;
-            const lightbox = document.getElementById('lightbox');
-            const lightboxImg = document.getElementById('lightbox-img');
-            const counter = document.getElementById('lightbox-counter');
-            lightboxImg.src = images[currentIndex].src;
-            lightboxImg.alt = images[currentIndex].alt;
-            counter.textContent = `${currentIndex + 1} / ${images.length}`;
-            lightbox.classList.add('active');
+            showMedia(currentIndex);
+            document.getElementById('lightbox').classList.add('active');
             document.body.style.overflow = 'hidden';
-            resetZoom();
         }
 
         function closeLightbox() {
             document.getElementById('lightbox').classList.remove('active');
             document.body.style.overflow = '';
-            resetZoom();
-        }
-
-        function resetZoom() {
-            isZoomed = false;
-            panX = 0; panY = 0;
-            const img = document.getElementById('lightbox-img');
-            img.classList.remove('zoomed');
-            img.style.transform = '';
-            img.style.cursor = 'zoom-in';
-            const navBtns = document.querySelectorAll('#lightbox .lightbox-nav');
-            navBtns.forEach(btn => btn.classList.remove('hidden-when-zoomed'));
+            lightboxVideo.pause();
         }
 
         function navigateLightbox(direction) {
-            resetZoom();
+            lightboxVideo.pause();
             currentIndex += direction;
-            if (currentIndex < 0) currentIndex = images.length - 1;
-            if (currentIndex >= images.length) currentIndex = 0;
-            const lightboxImg = document.getElementById('lightbox-img');
-            const counter = document.getElementById('lightbox-counter');
-            lightboxImg.src = images[currentIndex].src;
-            lightboxImg.alt = images[currentIndex].alt;
-            counter.textContent = `${currentIndex + 1} / ${images.length}`;
+            if (currentIndex < 0) currentIndex = mediaItems.length - 1;
+            if (currentIndex >= mediaItems.length) currentIndex = 0;
+            showMedia(currentIndex);
         }
-
-        const lightboxImg = document.getElementById('lightbox-img');
-        const lightboxContent = document.querySelector('.lightbox-content');
-        const lightboxNavBtns = document.querySelectorAll('#lightbox .lightbox-nav');
-
-        function setNavVisibility() {
-            lightboxNavBtns.forEach(btn => btn.classList.toggle('hidden-when-zoomed', isZoomed));
-        }
-
-        function applyPan() {
-            lightboxImg.style.transform = `scale(${zoomScale}) translate(${panX / zoomScale}px, ${panY / zoomScale}px)`;
-        }
-
-        lightboxImg.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (!isZoomed) {
-                isZoomed = true;
-                lightboxImg.classList.add('zoomed');
-                lightboxImg.style.cursor = 'grab';
-
-                const rect = lightboxImg.getBoundingClientRect();
-                const cx = (e.clientX - rect.left) / rect.width;
-                const cy = (e.clientY - rect.top) / rect.height;
-                const mX = rect.width * (zoomScale - 1) / 2;
-                const mY = rect.height * (zoomScale - 1) / 2;
-                panX = Math.max(-mX, Math.min(mX, (0.5 - cx) * mX * 2));
-                panY = Math.max(-mY, Math.min(mY, (0.5 - cy) * mY * 2));
-                applyPan();
-                setNavVisibility();
-            } else {
-                resetZoom();
-            }
-        });
-
-        // Smooth desktop pan with lerp
-        let panRAF = null, targetPanX = 0, targetPanY = 0;
-        function startPanLoop() {
-            function tick() {
-                if (!isZoomed) { panRAF = null; return; }
-                panX += (targetPanX - panX) * 0.4;
-                panY += (targetPanY - panY) * 0.4;
-                applyPan();
-                panRAF = requestAnimationFrame(tick);
-            }
-            if (!panRAF) panRAF = requestAnimationFrame(tick);
-        }
-
-        lightboxContent.addEventListener('mousemove', (e) => {
-            if (!isZoomed) return;
-            const r = lightboxContent.getBoundingClientRect();
-            const mx = (e.clientX - r.left) / r.width;
-            const my = (e.clientY - r.top) / r.height;
-            const mX = lightboxImg.offsetWidth * (zoomScale - 1) / 2;
-            const mY = lightboxImg.offsetHeight * (zoomScale - 1) / 2;
-            targetPanX = Math.max(-mX, Math.min(mX, (0.5 - mx) * mX * 2));
-            targetPanY = Math.max(-mY, Math.min(mY, (0.5 - my) * mY * 2));
-            startPanLoop();
-        });
-
-        // Mobile touch pan
-        let tpSX = 0, tpSY = 0, tpLX = 0, tpLY = 0;
-        lightboxContent.addEventListener('touchstart', (e) => {
-            if (!isZoomed || e.touches.length !== 1) return;
-            e.preventDefault();
-            tpSX = e.touches[0].clientX; tpSY = e.touches[0].clientY;
-            tpLX = panX; tpLY = panY;
-        }, { passive: false });
-        lightboxContent.addEventListener('touchmove', (e) => {
-            if (!isZoomed || e.touches.length !== 1) return;
-            e.preventDefault();
-            const mX = lightboxImg.offsetWidth * (zoomScale - 1) / 2;
-            const mY = lightboxImg.offsetHeight * (zoomScale - 1) / 2;
-            panX = Math.max(-mX, Math.min(mX, tpLX + (e.touches[0].clientX - tpSX)));
-            panY = Math.max(-mY, Math.min(mY, tpLY + (e.touches[0].clientY - tpSY)));
-            applyPan();
-        }, { passive: false });
 
         document.addEventListener('keydown', (e) => {
-            const lightbox = document.getElementById('lightbox');
-            if (!lightbox.classList.contains('active')) return;
+            if (!document.getElementById('lightbox').classList.contains('active')) return;
             if (e.key === 'Escape') closeLightbox();
-            if (e.key === 'ArrowLeft' && !isZoomed) navigateLightbox(-1);
-            if (e.key === 'ArrowRight' && !isZoomed) navigateLightbox(1);
+            if (e.key === 'ArrowLeft') navigateLightbox(-1);
+            if (e.key === 'ArrowRight') navigateLightbox(1);
         });
 
         document.getElementById('lightbox').addEventListener('click', (e) => {
-            if (e.target.id === 'lightbox' && !isZoomed) closeLightbox();
+            if (e.target.id === 'lightbox') closeLightbox();
         });
 
         // Mobile nav
@@ -803,19 +717,11 @@
 
         // Touch swipe for lightbox
         let touchStartX = 0;
-        let touchEndX = 0;
         const lightbox = document.getElementById('lightbox');
-        lightbox.addEventListener('touchstart', (e) => {
-            touchStartX = e.changedTouches[0].screenX;
-        }, { passive: true });
+        lightbox.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].clientX; }, { passive: true });
         lightbox.addEventListener('touchend', (e) => {
-            if (isZoomed) return;
-            touchEndX = e.changedTouches[0].screenX;
-            const diff = touchStartX - touchEndX;
-            if (Math.abs(diff) > 50) {
-                if (diff > 0) navigateLightbox(1);
-                else navigateLightbox(-1);
-            }
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            if (Math.abs(dx) > 50) { dx < 0 ? navigateLightbox(1) : navigateLightbox(-1); }
         }, { passive: true });
     </script>
   </body>

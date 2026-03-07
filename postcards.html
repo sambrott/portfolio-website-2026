@@ -229,18 +229,6 @@
             max-height: 100%;
             object-fit: contain;
             border-radius: 4px;
-            cursor: zoom-in;
-            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            transform-origin: center center;
-        }
-
-        .lightbox-content img.zoomed {
-            cursor: grab;
-            transform: scale(2.5);
-        }
-
-        .lightbox-content img.zoomed:active {
-            cursor: grabbing;
         }
 
         .lightbox-close {
@@ -249,8 +237,8 @@
             right: 20px;
             width: 40px;
             height: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             color: #fff;
             font-size: 24px;
@@ -263,7 +251,7 @@
         }
 
         .lightbox-close:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.8);
         }
 
         .lightbox-nav {
@@ -272,8 +260,8 @@
             transform: translateY(-50%);
             width: 50px;
             height: 50px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             color: #fff;
             font-size: 24px;
@@ -286,7 +274,7 @@
         }
 
         .lightbox-nav:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.8);
         }
 
         .lightbox-prev { left: 20px; }
@@ -480,7 +468,7 @@
     <div class="lightbox" id="lightbox">
         <button class="lightbox-close" onclick="closeLightbox()">×</button>
         <button class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1)">‹</button>
-        <div class="lightbox-content">
+        <div class="lightbox-content" id="lightbox-content">
             <img id="lightbox-img" src="" alt="" />
         </div>
         <button class="lightbox-nav lightbox-next" onclick="navigateLightbox(1)">›</button>
@@ -545,108 +533,42 @@
             img.addEventListener('click', () => openLightbox(index));
         });
 
-        let isZoomed = false;
-        let panX = 0;
-        let panY = 0;
-        const zoomScale = 2.5;
+        const lightboxContent = document.getElementById('lightbox-content');
 
         function openLightbox(index) {
             currentIndex = index;
-            const lightbox = document.getElementById('lightbox');
             const lightboxImg = document.getElementById('lightbox-img');
-            const counter = document.getElementById('lightbox-counter');
             lightboxImg.src = images[currentIndex].src;
             lightboxImg.alt = images[currentIndex].alt;
-            counter.textContent = `${currentIndex + 1} / ${images.length}`;
-            lightbox.classList.add('active');
+            document.getElementById('lightbox-counter').textContent = `${currentIndex + 1} / ${images.length}`;
+            document.getElementById('lightbox').classList.add('active');
             document.body.style.overflow = 'hidden';
-            resetZoom();
         }
 
         function closeLightbox() {
             document.getElementById('lightbox').classList.remove('active');
             document.body.style.overflow = '';
-            resetZoom();
-        }
-
-        function resetZoom() {
-            const lightboxImg = document.getElementById('lightbox-img');
-            isZoomed = false;
-            panX = 0;
-            panY = 0;
-            lightboxImg.classList.remove('zoomed');
-            lightboxImg.style.transform = '';
-            lightboxImg.style.cursor = 'zoom-in';
         }
 
         function navigateLightbox(direction) {
-            resetZoom();
             currentIndex += direction;
             if (currentIndex < 0) currentIndex = images.length - 1;
             if (currentIndex >= images.length) currentIndex = 0;
             const lightboxImg = document.getElementById('lightbox-img');
-            const counter = document.getElementById('lightbox-counter');
             lightboxImg.src = images[currentIndex].src;
             lightboxImg.alt = images[currentIndex].alt;
-            counter.textContent = `${currentIndex + 1} / ${images.length}`;
+            document.getElementById('lightbox-counter').textContent = `${currentIndex + 1} / ${images.length}`;
         }
 
-        const lightboxImg = document.getElementById('lightbox-img');
-        const lightboxContent = document.querySelector('.lightbox-content');
-        
-        lightboxImg.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (!isZoomed) {
-                isZoomed = true;
-                lightboxImg.classList.add('zoomed');
-                
-                const rect = lightboxImg.getBoundingClientRect();
-                const clickX = (e.clientX - rect.left) / rect.width;
-                const clickY = (e.clientY - rect.top) / rect.height;
-                
-                panX = (0.5 - clickX) * rect.width * (zoomScale - 1);
-                panY = (0.5 - clickY) * rect.height * (zoomScale - 1);
-                
-                const maxPanX = rect.width * (zoomScale - 1) / 2;
-                const maxPanY = rect.height * (zoomScale - 1) / 2;
-                panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
-                panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
-                
-                lightboxImg.style.transform = `scale(${zoomScale}) translate(${panX / zoomScale}px, ${panY / zoomScale}px)`;
-            } else {
-                resetZoom();
-            }
-        });
-
-        lightboxContent.addEventListener('mousemove', (e) => {
-            if (!isZoomed) return;
-            
-            const rect = lightboxContent.getBoundingClientRect();
-            const mouseX = (e.clientX - rect.left) / rect.width;
-            const mouseY = (e.clientY - rect.top) / rect.height;
-            
-            const imgWidth = lightboxImg.naturalWidth ? lightboxImg.offsetWidth : rect.width;
-            const imgHeight = lightboxImg.naturalHeight ? lightboxImg.offsetHeight : rect.height;
-            
-            const maxPanX = imgWidth * (zoomScale - 1) / 2;
-            const maxPanY = imgHeight * (zoomScale - 1) / 2;
-            
-            panX = (0.5 - mouseX) * maxPanX * 2;
-            panY = (0.5 - mouseY) * maxPanY * 2;
-            
-            lightboxImg.style.transform = `scale(${zoomScale}) translate(${panX / zoomScale}px, ${panY / zoomScale}px)`;
-        });
-
         document.addEventListener('keydown', (e) => {
-            const lightbox = document.getElementById('lightbox');
-            if (!lightbox.classList.contains('active')) return;
+            if (!document.getElementById('lightbox').classList.contains('active')) return;
             if (e.key === 'Escape') closeLightbox();
-            if (e.key === 'ArrowLeft' && !isZoomed) navigateLightbox(-1);
-            if (e.key === 'ArrowRight' && !isZoomed) navigateLightbox(1);
+            if (e.key === 'ArrowLeft') navigateLightbox(-1);
+            if (e.key === 'ArrowRight') navigateLightbox(1);
         });
 
         document.getElementById('lightbox').addEventListener('click', (e) => {
-            if (e.target.id === 'lightbox' && !isZoomed) closeLightbox();
+            if (e.target.id === 'lightbox') closeLightbox();
         });
 
         // Mobile nav
@@ -661,19 +583,11 @@
 
         // Touch swipe for lightbox
         let touchStartX = 0;
-        let touchEndX = 0;
         const lightbox = document.getElementById('lightbox');
-        lightbox.addEventListener('touchstart', (e) => {
-            touchStartX = e.changedTouches[0].screenX;
-        }, { passive: true });
+        lightbox.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].clientX; }, { passive: true });
         lightbox.addEventListener('touchend', (e) => {
-            if (isZoomed) return;
-            touchEndX = e.changedTouches[0].screenX;
-            const diff = touchStartX - touchEndX;
-            if (Math.abs(diff) > 50) {
-                if (diff > 0) navigateLightbox(1);
-                else navigateLightbox(-1);
-            }
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            if (Math.abs(dx) > 50) { dx < 0 ? navigateLightbox(1) : navigateLightbox(-1); }
         }, { passive: true });
     </script>
   </body>
