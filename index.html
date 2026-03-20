@@ -345,10 +345,6 @@
             .banquet-hero__tagline::before {
                 width: clamp(30px, 10vw, 120px);
             }
-            .forma-banner {
-                height: 40vh;
-                min-height: 250px;
-            }
         }
         @media (max-width: 480px) {
             .project-image { height: 35vh; min-height: 200px; }
@@ -369,10 +365,6 @@
             .banquet-hero__eyebrow::after,
             .banquet-hero__tagline::before {
                 width: clamp(20px, 8vw, 80px);
-            }
-            .forma-banner {
-                height: 35vh;
-                min-height: 200px;
             }
         }
         header.hidden { transform: translateY(-100%); transition: transform 0.3s ease-in-out; }
@@ -478,6 +470,36 @@
         /* Softer vignette on cream Forma card in light mode */
         [data-theme="light"] .project-card.forma-banner::before {
             background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.18) 100%);
+        }
+        /*
+         * Mobile heights MUST live after base .forma-banner { height: 70vh } or that rule wins.
+         * Match .project-image exactly: 40vh / min 250 (tablet), 35vh / min 200 (phone).
+         */
+        @media (max-width: 768px) {
+            .forma-banner {
+                height: 40vh;
+                min-height: 250px;
+                box-sizing: border-box;
+            }
+            .forma-banner__content {
+                padding: 0 clamp(14px, 5vw, 28px);
+                text-align: center;
+            }
+            .forma-banner__sub {
+                margin-top: 0.24em;
+                max-width: 20rem;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+        @media (max-width: 480px) {
+            .forma-banner {
+                height: 35vh;
+                min-height: 200px;
+            }
+            .forma-banner__content {
+                padding: 0 clamp(12px, 5vw, 22px);
+            }
         }
     </style>
 </head>
