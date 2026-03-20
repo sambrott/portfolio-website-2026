@@ -11,6 +11,9 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="sam.brott" />
     <meta name="twitter:image" content="https://res.cloudinary.com/dz9d0grpe/image/upload/v1772868648/portfolio_thumbnail_enxqyt.jpg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;1,9..144,200;1,9..144,300&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap">
     <style>
         @font-face {
@@ -342,6 +345,10 @@
             .banquet-hero__tagline::before {
                 width: clamp(30px, 10vw, 120px);
             }
+            .forma-banner {
+                height: 40vh;
+                min-height: 250px;
+            }
         }
         @media (max-width: 480px) {
             .project-image { height: 35vh; min-height: 200px; }
@@ -363,9 +370,115 @@
             .banquet-hero__tagline::before {
                 width: clamp(20px, 8vw, 80px);
             }
+            .forma-banner {
+                height: 35vh;
+                min-height: 200px;
+            }
         }
         header.hidden { transform: translateY(-100%); transition: transform 0.3s ease-in-out; }
         header:not(.hidden) { transform: translateY(0); transition: none; }
+
+        /* ── FORMA BANNER (project card) — same block height as .project-image ── */
+        .forma-banner {
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            overflow: hidden;
+            display: block;
+            text-decoration: none;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            background: #090909;
+            transition: background 0.35s ease;
+        }
+        [data-theme="light"] .forma-banner {
+            background: #F7F4EF;
+        }
+        .project-card.forma-banner .project-title {
+            z-index: 3;
+            transition: color 0.35s ease, text-shadow 0.35s ease;
+        }
+        [data-theme="light"] .project-card.forma-banner .project-title {
+            color: #111;
+            text-shadow: 0 2px 14px rgba(247, 244, 239, 0.95), 0 1px 3px rgba(0, 0, 0, 0.12);
+        }
+        .forma-banner canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .forma-banner__content {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            filter: drop-shadow(0 1px 12px rgba(0,0,0,0.18));
+            transition: filter 0.35s ease;
+        }
+        [data-theme="light"] .forma-banner__content {
+            filter: drop-shadow(0 1px 14px rgba(247, 244, 239, 0.92)) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.06));
+        }
+        .forma-banner__logo {
+            font-family: 'Fraunces', Georgia, serif;
+            font-optical-sizing: auto;
+            font-weight: 300;
+            font-style: normal;
+            line-height: 1;
+            letter-spacing: -0.025em;
+            color: #d8d8d8;
+            display: flex;
+            align-items: baseline;
+            transition: color 0.35s ease;
+        }
+        [data-theme="light"] .forma-banner__logo {
+            color: #1a1a1a;
+        }
+        .forma-banner__logo .dot {
+            font-style: italic;
+            color: #E8622A;
+        }
+        .forma-banner__sub {
+            font-family: 'Fraunces', Georgia, serif;
+            font-weight: 300;
+            letter-spacing: 0.01em;
+            margin-top: 0.32em;
+            color: rgba(210, 207, 202, 0.82);
+            transition: opacity 0.35s ease, transform 0.35s ease, color 0.35s ease;
+        }
+        [data-theme="light"] .forma-banner__sub {
+            color: rgba(55, 52, 48, 0.85);
+        }
+        .forma-banner__sub em {
+            font-style: italic;
+            color: #E8622A;
+        }
+        @media (hover: hover) {
+            .forma-banner__sub {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            .forma-banner:hover .forma-banner__sub {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @media (hover: none) {
+            .forma-banner__sub {
+                opacity: 1;
+                transform: none;
+            }
+        }
+        /* Softer vignette on cream Forma card in light mode */
+        [data-theme="light"] .project-card.forma-banner::before {
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.18) 100%);
+        }
     </style>
 </head>
 <body>
@@ -412,6 +525,16 @@
                     </div>
                 </div>
                 <span class="project-title">Coors Banquet</span>
+            </a>
+            <a class="project-card forma-banner" href="https://forma.cool" target="_blank" rel="noopener noreferrer" id="forma-card">
+                <canvas id="forma-canvas"></canvas>
+                <div class="forma-banner__content">
+                    <div class="forma-banner__logo" id="forma-logo">
+                        <span class="word">forma</span><span class="dot">.</span>
+                    </div>
+                    <div class="forma-banner__sub">Work done. <em>Without</em> the noise.</div>
+                </div>
+                <span class="project-title">Forma</span>
             </a>
             <a href="lvol.html" class="project-card">
                 <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047242/alternate_copy_boclcx.png" alt="Lady Vol Hockey" class="project-image lvol-cover" />
@@ -505,6 +628,186 @@
             document.getElementById('mobile-nav').classList.remove('active');
             document.body.style.overflow = '';
         }
+    </script>
+    <script>
+(function() {
+  function lerp3(a, b, t) {
+    t = Math.max(0, Math.min(1, t));
+    return [
+      Math.round(a[0]+(b[0]-a[0])*t),
+      Math.round(a[1]+(b[1]-a[1])*t),
+      Math.round(a[2]+(b[2]-a[2])*t),
+    ];
+  }
+
+  var canvas    = document.getElementById('forma-canvas');
+  var banner    = document.getElementById('forma-card');
+  var logoEl    = document.getElementById('forma-logo');
+  if (!canvas || !banner) return;
+
+  var ctx       = canvas.getContext('2d');
+  var ORANGE    = [232, 98, 42];
+  var isTouch   = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+  function themePalette() {
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    if (light) {
+      return {
+        neutral: [118, 108, 100],
+        idleA: 0.28,
+        idleB: 0.26,
+        orangeCap: 0.78,
+        orangeMix: 0.55,
+        touchA: 0.28,
+        touchB: 0.36
+      };
+    }
+    return {
+      neutral: [198, 194, 188],
+      idleA: 0.26,
+      idleB: 0.24,
+      orangeCap: 0.75,
+      orangeMix: 0.52,
+      touchA: 0.26,
+      touchB: 0.34
+    };
+  }
+  var W=0, H=0, CX=0, CY=0;
+  var mouse     = { x:-9999, y:-9999 };
+  var hoverBlend= 0;
+  var active    = false;
+  var timeStart = 0;
+  var rafId     = 0;
+  var touchStart= null;
+
+  function resize() {
+    var dpr  = window.devicePixelRatio || 1;
+    var rect = banner.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    canvas.width  = Math.round(rect.width  * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    canvas.style.width  = rect.width  + 'px';
+    canvas.style.height = rect.height + 'px';
+    W = rect.width; H = rect.height;
+    CX = W/2; CY = H/2;
+    if (logoEl) {
+      /* Track banner box + viewport like Banquet (vh + min dimension), not width alone */
+      var vhPx = window.innerHeight;
+      var vminPx = Math.min(window.innerWidth, window.innerHeight);
+      var isNarrow = W < 580;
+      var hRatio = isNarrow ? 0.275 : 0.34;
+      var wRatio = isNarrow ? 0.31 : 0.39;
+      var fsIdeal = Math.min(H * hRatio, W * wRatio);
+      var fsFloor = vminPx * (isNarrow ? 0.042 : 0.056);
+      var fsCap = vhPx * 0.185;
+      var fs = Math.round(Math.max(fsFloor, Math.min(fsIdeal, fsCap)));
+      logoEl.style.fontSize = fs + 'px';
+      var sub = logoEl.nextElementSibling;
+      if (sub) sub.style.fontSize = Math.round(fs * 0.185) + 'px';
+    }
+  }
+
+  function drawDesktop(now) {
+    if (!ctx||!W||!H) return;
+    var dpr = window.devicePixelRatio||1;
+    var w   = canvas.width/dpr, h = canvas.height/dpr;
+    var t   = timeStart ? (now-timeStart)/1000 : 0;
+    hoverBlend += ((active?1:0)-hoverBlend)*0.08;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.save(); ctx.scale(dpr,dpr);
+    var pal = themePalette();
+    var NEUTRAL = pal.neutral;
+    /* Halftone scale from banner short side (~pleasant at ref ≈ mid laptop / ~⅓ 16" window) */
+    var ref = Math.min(w, h);
+    var dotScale = Math.max(0.84, Math.min(1.38, ref / 540));
+    var cell = Math.max(15, Math.min(40, ref * 0.034));
+    var jScale = 0.88 + 0.12 * dotScale;
+    var influence = Math.max(w * 0.2, ref * 0.4);
+    var maxPush = Math.max(9, ref * 0.021);
+    var hb=hoverBlend;
+    for (var gx=cell/2; gx<w; gx+=cell) {
+      for (var gy=cell/2; gy<h; gy+=cell) {
+        var w1=Math.sin(gx*0.065+gy*0.048-t*1.15);
+        var w2=Math.sin(gx*0.038-gy*0.072+t*0.92);
+        var w3=Math.cos(gx*0.052+gy*0.061+t*0.78);
+        var w4=Math.sin((gx+gy)*0.044-t*1.35);
+        var wave=(w1+w2+w3+w4)*0.25;
+        var px=gx+wave*2.8*jScale+Math.sin(gy*0.11-t*1.4)*1.6*jScale;
+        var py=gy+Math.cos(gx*0.09+t*1.05)*2.2*jScale+wave*2*jScale;
+        px+=Math.sin(t*6.8+gx*0.12)*1.15*jScale+Math.cos(t*4.9+gy*0.17)*0.85*jScale;
+        py+=Math.cos(t*5.5+gx*0.09)*0.95*jScale+Math.sin(t*7.1+gy*0.11)*0.75*jScale;
+        var dx=px-mouse.x, dy=py-mouse.y;
+        var dist=Math.sqrt(dx*dx+dy*dy);
+        var ht=Math.max(0,1-dist/influence);
+        if (hb*ht>0.01){var push=hb*ht*ht*maxPush,ang=Math.atan2(dy,dx);px+=Math.cos(ang)*push;py+=Math.sin(ang)*push;}
+        var edgeDist=Math.min(px,w-px,py,h-py);
+        var edgeFade=Math.min(1,edgeDist/(Math.max(w,h)*0.08));
+        if (edgeFade<0.02) continue;
+        var breathe=0.5+0.5*wave, baseR=(0.92+0.5*breathe)*dotScale;
+        /* Card hover: all dots a bit larger; orange cursor glow noticeably larger */
+        var hoverGrow = 1 + 0.08 * hb;
+        var glowBoost = 1 + 0.28 * hb * ht * ht;
+        baseR *= hoverGrow;
+        var idleAlpha=(pal.idleA+pal.idleB*breathe)*edgeFade;
+        if (hb*ht>0.02){
+          var orangeT=Math.pow(ht,1.35)*hb, blendT=orangeT;
+          var rgb=lerp3(NEUTRAL,ORANGE,blendT);
+          var ar=(baseR+orangeT*3.05*dotScale)*glowBoost, alpha=Math.min(pal.orangeCap,idleAlpha+orangeT*pal.orangeMix)*edgeFade;
+          ctx.beginPath();ctx.arc(px,py,ar,0,Math.PI*2);
+          ctx.fillStyle='rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+','+alpha.toFixed(3)+')';ctx.fill();
+        } else {
+          ctx.beginPath();ctx.arc(px,py,baseR,0,Math.PI*2);
+          ctx.fillStyle='rgba('+NEUTRAL[0]+','+NEUTRAL[1]+','+NEUTRAL[2]+','+idleAlpha.toFixed(3)+')';ctx.fill();
+        }
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawTouch(elapsed) {
+    if (!ctx||!W||!H) return;
+    var dpr=window.devicePixelRatio||1, w=canvas.width/dpr, h=canvas.height/dpr, t=elapsed/1000;
+    ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.scale(dpr,dpr);
+    var pal = themePalette();
+    var NEUTRAL = pal.neutral;
+    var ref = Math.min(w, h);
+    var dotScale = Math.max(0.84, Math.min(1.38, ref / 540));
+    var SP = Math.max(15, Math.min(40, ref * 0.034));
+    for (var gx=SP/2; gx<w; gx+=SP) {
+      for (var gy=SP/2; gy<h; gy+=SP) {
+        var edgeDist=Math.min(gx,w-gx,gy,h-gy), edgeFade=Math.min(1,edgeDist/(Math.max(w,h)*0.08));
+        if (edgeFade<0.02) continue;
+        var wave=Math.sin((gx*0.55+gy*0.45)/(w*0.75)*Math.PI*2-t*0.65*Math.PI*2);
+        var norm=(wave+1)/2;
+        var alpha=(pal.touchA+norm*pal.touchB)*edgeFade;
+        if (alpha<0.01) continue;
+        var isOrange=norm>0.76;
+        var rgb=isOrange?lerp3(NEUTRAL,ORANGE,Math.min(1,(norm-0.76)/0.24)):NEUTRAL;
+        var rDot = (1.18 + norm * 0.72) * dotScale;
+        ctx.fillStyle='rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+','+alpha.toFixed(3)+')';
+        ctx.beginPath();ctx.arc(gx,gy,rDot,0,Math.PI*2);ctx.fill();
+      }
+    }
+  }
+
+  if (!isTouch) {
+    banner.addEventListener('mouseenter', function(){ active=true; });
+    banner.addEventListener('mouseleave', function(){ active=false; mouse.x=-9999; mouse.y=-9999; });
+    banner.addEventListener('mousemove',  function(e){ var r=banner.getBoundingClientRect(); mouse.x=e.clientX-r.left; mouse.y=e.clientY-r.top; });
+  }
+
+  function tickDesktop(now){ drawDesktop(now); rafId=requestAnimationFrame(tickDesktop); }
+  function tickTouch(ts){ if(!touchStart)touchStart=ts; drawTouch(ts-touchStart); rafId=requestAnimationFrame(tickTouch); }
+
+  if (window.ResizeObserver) { new ResizeObserver(resize).observe(banner); }
+  else { window.addEventListener('resize', resize); }
+
+  document.fonts.ready.then(function(){
+    resize();
+    if (isTouch){ rafId=requestAnimationFrame(tickTouch); }
+    else { timeStart=performance.now(); rafId=requestAnimationFrame(tickDesktop); }
+  });
+})();
     </script>
 </body>
 </html>
