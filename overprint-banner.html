@@ -17,7 +17,7 @@ canvas{display:block;touch-action:none}
   bottom:clamp(10px,3vw,18px);
   z-index:20;
   padding:7px 14px;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-family:Helvetica,'Helvetica Neue',Arial,sans-serif;
   font-size:10px;
   font-weight:600;
   letter-spacing:0.12em;
@@ -456,16 +456,45 @@ const gyroGestureOpts = { passive: true, capture: true };
   canvas.addEventListener(ev, tryEnableGyroFromGesture, gyroGestureOpts);
   document.documentElement.addEventListener(ev, tryEnableGyroFromGesture, gyroGestureOpts);
 });
+const gyroSmooth = { g: 0, b: 0 };
+let gyroSmoothedInit = false;
+let gyroHasSample = false;
+let gyroLastRaw = { g: 0, b: 0 };
+const gyroSmoothAlpha = 0.16;
+const gyroSpikeDeg = 42;
+const gyroInputDeg = 48;
+const gyroOutScale = 0.86;
 function handleGyro(e) {
   if (!useGyroTilt) return;
   if (draggedMesh) return;
-  const g = e.gamma;
-  const b = e.beta;
+  let g = e.gamma;
+  let b = e.beta;
   if (!Number.isFinite(g) || !Number.isFinite(b)) return;
-  const gx = Math.max(-45, Math.min(45, g)) / 45;
-  const gy = Math.max(-45, Math.min(45, b - 45)) / 45;
-  targetRot.y = 0.15 + gx * maxTilt * tiltHoriz;
-  targetRot.x = 0.12 + gy * maxTilt * tiltVert;
+  if (gyroHasSample) {
+    const dg = g - gyroLastRaw.g;
+    const db = b - gyroLastRaw.b;
+    if (Math.abs(dg) > gyroSpikeDeg) g = gyroLastRaw.g + Math.sign(dg) * Math.min(Math.abs(dg), gyroSpikeDeg * 0.35);
+    if (Math.abs(db) > gyroSpikeDeg) b = gyroLastRaw.b + Math.sign(db) * Math.min(Math.abs(db), gyroSpikeDeg * 0.35);
+  }
+  gyroLastRaw.g = g;
+  gyroLastRaw.b = b;
+  gyroHasSample = true;
+  if (!gyroSmoothedInit) {
+    gyroSmooth.g = g;
+    gyroSmooth.b = b;
+    gyroSmoothedInit = true;
+  } else {
+    gyroSmooth.g += (g - gyroSmooth.g) * gyroSmoothAlpha;
+    gyroSmooth.b += (b - gyroSmooth.b) * gyroSmoothAlpha;
+  }
+  const gs = gyroSmooth.g;
+  const bs = gyroSmooth.b;
+  const roll = gs / gyroInputDeg;
+  const pitch = (bs - 45) / gyroInputDeg;
+  const gx = Math.tanh(Math.max(-1.15, Math.min(1.15, roll)));
+  const gy = Math.tanh(Math.max(-1.15, Math.min(1.15, pitch)));
+  targetRot.y = 0.15 + gx * maxTilt * tiltHoriz * gyroOutScale;
+  targetRot.x = 0.12 + gy * maxTilt * tiltVert * gyroOutScale;
 }
 
 (function setupTiltEnableButton() {
