@@ -20,8 +20,13 @@ canvas{display:block;touch-action:none}
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x050505);
 
+const useGyroTilt =
+  typeof navigator !== 'undefined' &&
+  (navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches);
+const mobileLogoBoost = useGyroTilt ? 1.2 : 1;
+
 const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 0, 8.1);
+camera.position.set(0, 0, useGyroTilt ? 9.35 : 8.1);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -113,7 +118,7 @@ const colorData = [
 const group = new THREE.Group();
 const meshes = [];
 
-const sizeScale = 1.32;
+const sizeScale = 1.32 * mobileLogoBoost;
 const rw = 0.55 * sizeScale;
 const rh = 1.4 * sizeScale;
 const rd = 0.28 * sizeScale;
@@ -163,10 +168,10 @@ function targetSlideFromPointer(baseX, baseY, startX, startY, startSlide, curX, 
 const overlapThreshold = Math.min(0.95, rh * 0.55 + gap * 0.15);
 
 let time = 0;
-const neutralHoldSeconds = 2;
-const motionScale = 0.88;
-const idleSpeed = 0.92 * motionScale;
-const floatSpeed = 1.05 * motionScale;
+const neutralHoldSeconds = 6;
+const motionScale = 1.05;
+const idleSpeed = 1.32 * motionScale;
+const floatSpeed = 1.42 * motionScale;
 const idleAmp = overlapThreshold * 0.42;
 const cyclePeriod = (2 * Math.PI) / idleSpeed;
 let animState = 'neutral';
@@ -229,7 +234,9 @@ const currentRot = { x: 0.12, y: 0.15 };
 const maxTilt = 0.55;
 const tiltHoriz = 1.05;
 const tiltVert = 1.28;
-const touchPrimary = window.matchMedia('(pointer: coarse)').matches;
+
+const OVERPRINT_SITE_URL = 'https://overprint.design';
+let bgTap = null;
 
 let draggedMesh = null;
 let dragStartX = 0;
@@ -256,17 +263,24 @@ function updateMouseTilt(clientX, clientY) {
 
 canvas.addEventListener('pointerdown', (e) => {
   const m = pickMesh(e.clientX, e.clientY);
-  if (!m) return;
-  draggedMesh = m;
-  dragStartX = e.clientX;
-  dragStartY = e.clientY;
-  dragStartSlide = m.userData.slideOffset;
-  canvas.style.cursor = 'grabbing';
-  canvas.setPointerCapture(e.pointerId);
+  if (m) {
+    bgTap = null;
+    draggedMesh = m;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    dragStartSlide = m.userData.slideOffset;
+    canvas.style.cursor = 'grabbing';
+    canvas.setPointerCapture(e.pointerId);
+    return;
+  }
+  bgTap = { x: e.clientX, y: e.clientY, time: performance.now(), pointerId: e.pointerId };
 });
 
 canvas.addEventListener('pointermove', (e) => {
-  if (!touchPrimary) {
+  if (bgTap && (Math.abs(e.clientX - bgTap.x) > 10 || Math.abs(e.clientY - bgTap.y) > 10)) {
+    bgTap = null;
+  }
+  if (!useGyroTilt) {
     updateMouseTilt(e.clientX, e.clientY);
   }
   if (!draggedMesh) return;
@@ -293,11 +307,26 @@ function endDrag() {
 canvas.addEventListener('pointerup', (e) => {
   if (draggedMesh) {
     try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+    endDrag();
+    return;
+  }
+  if (bgTap && bgTap.pointerId === e.pointerId) {
+    const dx = e.clientX - bgTap.x;
+    const dy = e.clientY - bgTap.y;
+    const moved = dx * dx + dy * dy > 100;
+    const dt = performance.now() - bgTap.time;
+    bgTap = null;
+    if (!moved && dt < 900) {
+      window.open(OVERPRINT_SITE_URL, '_blank', 'noopener,noreferrer');
+    }
   }
   endDrag();
 });
 
-canvas.addEventListener('pointercancel', endDrag);
+canvas.addEventListener('pointercancel', () => {
+  bgTap = null;
+  endDrag();
+});
 
 function resetTiltToDefault() {
   if (draggedMesh) return;
@@ -305,25 +334,39 @@ function resetTiltToDefault() {
   targetRot.y = 0.15;
   endDrag();
 }
-canvas.addEventListener('pointerleave', resetTiltToDefault);
+canvas.addEventListener('pointerleave', () => {
+  bgTap = null;
+  if (useGyroTilt) return;
+  resetTiltToDefault();
+});
 
 let gyroAttached = false;
-function initGyro() {
+function attachGyroListener() {
   if (gyroAttached) return;
-  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+  window.addEventListener('deviceorientation', handleGyro, false);
+  gyroAttached = true;
+}
+function requestGyroPermission() {
+  if (gyroAttached) return;
+  if (typeof DeviceOrientationEvent === 'undefined') return;
+  if (typeof DeviceOrientationEvent.requestPermission === 'function') {
     DeviceOrientationEvent.requestPermission().then(r => {
-      if (r === 'granted') {
-        window.addEventListener('deviceorientation', handleGyro);
-        gyroAttached = true;
-      }
+      if (r === 'granted') attachGyroListener();
     }).catch(() => {});
   } else {
-    window.addEventListener('deviceorientation', handleGyro);
-    gyroAttached = true;
+    attachGyroListener();
   }
 }
+if (useGyroTilt && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
+  attachGyroListener();
+}
+window.addEventListener('touchstart', () => {
+  if (useGyroTilt && !gyroAttached && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    requestGyroPermission();
+  }
+}, { passive: true });
 function handleGyro(e) {
-  if (!touchPrimary) return;
+  if (!useGyroTilt) return;
   if (draggedMesh) return;
   if (e.gamma === null || e.beta === null) return;
   const gx = Math.max(-45, Math.min(45, e.gamma)) / 45;
@@ -331,8 +374,6 @@ function handleGyro(e) {
   targetRot.y = 0.15 + gx * maxTilt * tiltHoriz;
   targetRot.x = 0.12 + gy * maxTilt * tiltVert;
 }
-window.addEventListener('touchstart', function gi() { initGyro(); window.removeEventListener('touchstart', gi); }, { once: true });
-initGyro();
 
 let lastFrameMs = performance.now();
 function lerpAlpha(frameTuning, dt) {
