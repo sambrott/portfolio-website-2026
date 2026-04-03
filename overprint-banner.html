@@ -456,45 +456,58 @@ const gyroGestureOpts = { passive: true, capture: true };
   canvas.addEventListener(ev, tryEnableGyroFromGesture, gyroGestureOpts);
   document.documentElement.addEventListener(ev, tryEnableGyroFromGesture, gyroGestureOpts);
 });
-const gyroSmooth = { g: 0, b: 0 };
 let gyroSmoothedInit = false;
 let gyroHasSample = false;
 let gyroLastRaw = { g: 0, b: 0 };
-const gyroSmoothAlpha = 0.16;
-const gyroSpikeDeg = 42;
-const gyroInputDeg = 48;
+/** Integrated tilt (deg) from small frame-to-frame deltas — avoids gamma wrap / gimbal flips. */
+let gyroRollAccum = 0;
+let gyroPitchAccum = 0;
+let gyroRollSmoothed = 0;
+let gyroPitchSmoothed = 0;
+const gyroDiscontinuityDeg = 38;
+const gyroMaxRateDeg = 11;
+const gyroMaxRollDeg = 44;
+const gyroMaxPitchDeg = 36;
 const gyroOutScale = 0.86;
+const gyroSmoothAlpha = 0.2;
 function handleGyro(e) {
   if (!useGyroTilt) return;
   if (draggedMesh) return;
-  let g = e.gamma;
-  let b = e.beta;
+  const g = e.gamma;
+  const b = e.beta;
   if (!Number.isFinite(g) || !Number.isFinite(b)) return;
-  if (gyroHasSample) {
-    const dg = g - gyroLastRaw.g;
-    const db = b - gyroLastRaw.b;
-    if (Math.abs(dg) > gyroSpikeDeg) g = gyroLastRaw.g + Math.sign(dg) * Math.min(Math.abs(dg), gyroSpikeDeg * 0.35);
-    if (Math.abs(db) > gyroSpikeDeg) b = gyroLastRaw.b + Math.sign(db) * Math.min(Math.abs(db), gyroSpikeDeg * 0.35);
+  if (!gyroSmoothedInit) {
+    gyroLastRaw.g = g;
+    gyroLastRaw.b = b;
+    gyroRollAccum = 0;
+    gyroPitchAccum = 0;
+    gyroRollSmoothed = 0;
+    gyroPitchSmoothed = 0;
+    gyroSmoothedInit = true;
+    gyroHasSample = true;
+    return;
   }
+  let dg = g - gyroLastRaw.g;
+  let db = b - gyroLastRaw.b;
   gyroLastRaw.g = g;
   gyroLastRaw.b = b;
   gyroHasSample = true;
-  if (!gyroSmoothedInit) {
-    gyroSmooth.g = g;
-    gyroSmooth.b = b;
-    gyroSmoothedInit = true;
-  } else {
-    gyroSmooth.g += (g - gyroSmooth.g) * gyroSmoothAlpha;
-    gyroSmooth.b += (b - gyroSmooth.b) * gyroSmoothAlpha;
-  }
-  const gs = gyroSmooth.g;
-  const bs = gyroSmooth.b;
-  const roll = gs / gyroInputDeg;
-  const pitch = (bs - 45) / gyroInputDeg;
-  const gx = Math.tanh(Math.max(-1.15, Math.min(1.15, roll)));
-  const gy = Math.tanh(Math.max(-1.15, Math.min(1.15, pitch)));
-  targetRot.y = 0.15 + gx * maxTilt * tiltHoriz * gyroOutScale;
-  targetRot.x = 0.12 + gy * maxTilt * tiltVert * gyroOutScale;
+  if (Math.abs(dg) > gyroDiscontinuityDeg) dg = 0;
+  if (Math.abs(db) > gyroDiscontinuityDeg) db = 0;
+  dg = Math.max(-gyroMaxRateDeg, Math.min(gyroMaxRateDeg, dg));
+  db = Math.max(-gyroMaxRateDeg, Math.min(gyroMaxRateDeg, db));
+  gyroRollAccum += dg;
+  gyroPitchAccum += db;
+  gyroRollAccum = Math.max(-gyroMaxRollDeg, Math.min(gyroMaxRollDeg, gyroRollAccum));
+  gyroPitchAccum = Math.max(-gyroMaxPitchDeg, Math.min(gyroMaxPitchDeg, gyroPitchAccum));
+  gyroRollSmoothed += (gyroRollAccum - gyroRollSmoothed) * gyroSmoothAlpha;
+  gyroPitchSmoothed += (gyroPitchAccum - gyroPitchSmoothed) * gyroSmoothAlpha;
+  const gx = Math.tanh((gyroRollSmoothed / gyroMaxRollDeg) * 1.05);
+  const gy = Math.tanh((gyroPitchSmoothed / gyroMaxPitchDeg) * 1.05);
+  const maxDy = maxTilt * tiltHoriz * gyroOutScale;
+  const maxDx = maxTilt * tiltVert * gyroOutScale;
+  targetRot.y = Math.max(0.15 - maxDy, Math.min(0.15 + maxDy, 0.15 + gx * maxDy));
+  targetRot.x = Math.max(0.12 - maxDx, Math.min(0.12 + maxDx, 0.12 + gy * maxDx));
 }
 
 (function setupTiltEnableButton() {
