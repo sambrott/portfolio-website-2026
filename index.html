@@ -507,6 +507,7 @@
 
         /* ── OVERPRINT BANNER (interactive 3D — iframe, title links out) ── */
         .overprint-banner {
+            --overprint-inset: clamp(8px, 2vw, 18px);
             position: relative;
             width: 100%;
             height: 70vh;
@@ -514,18 +515,20 @@
             display: block;
             background: #050505;
         }
-        /* Full-bleed link under iframe: margin ring is clickable (logo stays interactive in iframe). */
+        /* Full-bleed link under iframe (ring outside iframe stays clickable). */
         .overprint-banner__site-link {
             position: absolute;
             inset: 0;
             z-index: 0;
         }
+        /* Must set explicit width/height; width/height:auto collapses iframes to ~300×150 in some browsers. */
         .overprint-banner__frame {
             position: absolute;
             z-index: 1;
-            inset: clamp(10px, 2.5vw, 22px);
-            width: auto;
-            height: auto;
+            top: var(--overprint-inset);
+            left: var(--overprint-inset);
+            width: calc(100% - 2 * var(--overprint-inset));
+            height: calc(100% - 2 * var(--overprint-inset));
             border: 0;
             display: block;
         }

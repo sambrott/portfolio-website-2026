@@ -24,9 +24,17 @@ const useGyroTilt =
   typeof navigator !== 'undefined' &&
   (navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches);
 const mobileLogoBoost = useGyroTilt ? 1.2 : 1;
+let inIframe = false;
+try {
+  inIframe = window.self !== window.top;
+} catch (e) {
+  inIframe = true;
+}
+const iframeEmbedBoost = inIframe ? 1.2 : 1;
 
 const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 0, useGyroTilt ? 9.35 : 8.1);
+const baseCamZ = useGyroTilt ? 9.35 : 8.1;
+camera.position.set(0, 0, inIframe ? baseCamZ * 0.82 : baseCamZ);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -118,7 +126,7 @@ const colorData = [
 const group = new THREE.Group();
 const meshes = [];
 
-const sizeScale = 1.32 * mobileLogoBoost;
+const sizeScale = 1.32 * mobileLogoBoost * iframeEmbedBoost;
 const rw = 0.55 * sizeScale;
 const rh = 1.4 * sizeScale;
 const rd = 0.28 * sizeScale;
@@ -454,10 +462,19 @@ function animate() {
 
 animate();
 
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+function onResize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  if (w < 2 || h < 2) return;
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(w, h);
+}
+window.addEventListener('resize', onResize);
+onResize();
+requestAnimationFrame(onResize);
+requestAnimationFrame(() => {
+  requestAnimationFrame(onResize);
 });
 </script>
 </body>
