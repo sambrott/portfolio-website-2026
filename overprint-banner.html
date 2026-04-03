@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Permissions-Policy" content="accelerometer=*, gyroscope=*, magnetometer=*">
 <title>Overprint — 3D Logo</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -23,7 +24,7 @@ scene.background = new THREE.Color(0x050505);
 const useGyroTilt =
   typeof navigator !== 'undefined' &&
   (navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches);
-const mobileLogoBoost = useGyroTilt ? 1.2 : 1;
+const mobileLogoBoost = useGyroTilt ? 1.08 : 1;
 let inIframe = false;
 try {
   inIframe = window.self !== window.top;
@@ -176,7 +177,7 @@ function targetSlideFromPointer(baseX, baseY, startX, startY, startSlide, curX, 
 const overlapThreshold = Math.min(0.95, rh * 0.55 + gap * 0.15);
 
 let time = 0;
-const neutralHoldSeconds = 6;
+const neutralHoldSeconds = 3.25;
 const motionScale = 1.05;
 const idleSpeed = 1.32 * motionScale;
 const floatSpeed = 1.42 * motionScale;
@@ -349,36 +350,51 @@ canvas.addEventListener('pointerleave', () => {
 });
 
 let gyroAttached = false;
+let gyroPermissionPending = false;
 function attachGyroListener() {
   if (gyroAttached) return;
-  window.addEventListener('deviceorientation', handleGyro, false);
+  window.addEventListener('deviceorientation', handleGyro, { passive: true });
   gyroAttached = true;
 }
 function requestGyroPermission() {
   if (gyroAttached) return;
   if (typeof DeviceOrientationEvent === 'undefined') return;
+  if (!window.isSecureContext) return;
   if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-    DeviceOrientationEvent.requestPermission().then(r => {
-      if (r === 'granted') attachGyroListener();
-    }).catch(() => {});
+    if (gyroPermissionPending) return;
+    gyroPermissionPending = true;
+    DeviceOrientationEvent.requestPermission()
+      .then((state) => {
+        gyroPermissionPending = false;
+        if (state === 'granted') attachGyroListener();
+      })
+      .catch(() => {
+        gyroPermissionPending = false;
+      });
   } else {
     attachGyroListener();
   }
 }
+function tryEnableGyroFromGesture() {
+  if (!useGyroTilt) return;
+  requestGyroPermission();
+}
 if (useGyroTilt && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
   attachGyroListener();
 }
-window.addEventListener('touchstart', () => {
-  if (useGyroTilt && !gyroAttached && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    requestGyroPermission();
-  }
-}, { passive: true });
+const gyroGestureOpts = { passive: true, capture: true };
+['touchstart', 'touchend', 'pointerdown', 'pointerup', 'click'].forEach((ev) => {
+  canvas.addEventListener(ev, tryEnableGyroFromGesture, gyroGestureOpts);
+  document.documentElement.addEventListener(ev, tryEnableGyroFromGesture, gyroGestureOpts);
+});
 function handleGyro(e) {
   if (!useGyroTilt) return;
   if (draggedMesh) return;
-  if (e.gamma === null || e.beta === null) return;
-  const gx = Math.max(-45, Math.min(45, e.gamma)) / 45;
-  const gy = Math.max(-45, Math.min(45, e.beta - 45)) / 45;
+  const g = e.gamma;
+  const b = e.beta;
+  if (!Number.isFinite(g) || !Number.isFinite(b)) return;
+  const gx = Math.max(-45, Math.min(45, g)) / 45;
+  const gy = Math.max(-45, Math.min(45, b - 45)) / 45;
   targetRot.y = 0.15 + gx * maxTilt * tiltHoriz;
   targetRot.x = 0.12 + gy * maxTilt * tiltVert;
 }
