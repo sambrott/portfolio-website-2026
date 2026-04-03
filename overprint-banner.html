@@ -7,7 +7,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
-body{background:#0a0a0e;overflow:hidden;cursor:default}
+body{background:#050505;overflow:hidden;cursor:default}
 canvas{display:block;touch-action:none}
 </style>
 </head>
@@ -18,10 +18,10 @@ canvas{display:block;touch-action:none}
 // SCENE
 // ============================================
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0a0e);
+scene.background = new THREE.Color(0x050505);
 
 const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 0, 7);
+camera.position.set(0, 0, 8.1);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -94,23 +94,30 @@ function createRhombus(width, height, depth) {
 }
 
 function createMat(color) {
-  return new THREE.MeshPhongMaterial({ color, specular: 0x888888, shininess: 100 });
+  return new THREE.MeshPhongMaterial({
+    color,
+    specular: 0x151518,
+    shininess: 42,
+    emissive: color,
+    emissiveIntensity: 0.07
+  });
 }
 
 const colorData = [
-  { color: 0x00b4d8, name: 'C' },
-  { color: 0xe040a0, name: 'M' },
-  { color: 0xf0d020, name: 'Y' },
-  { color: 0xb8b8c4, name: 'K' }
+  { color: 0x00cfff, name: 'C' },
+  { color: 0xff1493, name: 'M' },
+  { color: 0xffd400, name: 'Y' },
+  { color: 0xc4c6ce, name: 'K' }
 ];
 
 const group = new THREE.Group();
 const meshes = [];
 
-const rw = 0.55;
-const rh = 1.4;
-const rd = 0.28;
-const gap = 0.58;
+const sizeScale = 1.32;
+const rw = 0.55 * sizeScale;
+const rh = 1.4 * sizeScale;
+const rd = 0.28 * sizeScale;
+const gap = 0.58 * sizeScale;
 
 const slideAngle = 12 * Math.PI / 180;
 const slideDX = Math.sin(slideAngle);
@@ -157,7 +164,7 @@ const overlapThreshold = Math.min(0.95, rh * 0.55 + gap * 0.15);
 
 let time = 0;
 const neutralHoldSeconds = 2;
-const motionScale = 0.7;
+const motionScale = 0.88;
 const idleSpeed = 0.92 * motionScale;
 const floatSpeed = 1.05 * motionScale;
 const idleAmp = overlapThreshold * 0.42;
@@ -222,6 +229,7 @@ const currentRot = { x: 0.12, y: 0.15 };
 const maxTilt = 0.55;
 const tiltHoriz = 1.05;
 const tiltVert = 1.28;
+const touchPrimary = window.matchMedia('(pointer: coarse)').matches;
 
 let draggedMesh = null;
 let dragStartX = 0;
@@ -258,7 +266,9 @@ canvas.addEventListener('pointerdown', (e) => {
 });
 
 canvas.addEventListener('pointermove', (e) => {
-  updateMouseTilt(e.clientX, e.clientY);
+  if (!touchPrimary) {
+    updateMouseTilt(e.clientX, e.clientY);
+  }
   if (!draggedMesh) return;
   e.preventDefault();
   const i = draggedMesh.userData.index;
@@ -289,31 +299,56 @@ canvas.addEventListener('pointerup', (e) => {
 
 canvas.addEventListener('pointercancel', endDrag);
 
-window.addEventListener('mouseleave', () => {
+function resetTiltToDefault() {
+  if (draggedMesh) return;
   targetRot.x = 0.12;
   targetRot.y = 0.15;
   endDrag();
-});
+}
+canvas.addEventListener('pointerleave', resetTiltToDefault);
 
+let gyroAttached = false;
 function initGyro() {
+  if (gyroAttached) return;
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    DeviceOrientationEvent.requestPermission().then(r => { if (r === 'granted') window.addEventListener('deviceorientation', handleGyro); }).catch(() => {});
-  } else { window.addEventListener('deviceorientation', handleGyro); }
+    DeviceOrientationEvent.requestPermission().then(r => {
+      if (r === 'granted') {
+        window.addEventListener('deviceorientation', handleGyro);
+        gyroAttached = true;
+      }
+    }).catch(() => {});
+  } else {
+    window.addEventListener('deviceorientation', handleGyro);
+    gyroAttached = true;
+  }
 }
 function handleGyro(e) {
-  if (!draggedMesh && e.gamma !== null && e.beta !== null) {
-    const gx = Math.max(-45, Math.min(45, e.gamma)) / 45;
-    const gy = Math.max(-45, Math.min(45, e.beta - 45)) / 45;
-    targetRot.y = 0.15 + gx * maxTilt * tiltHoriz;
-    targetRot.x = 0.12 + gy * maxTilt * tiltVert;
-  }
+  if (!touchPrimary) return;
+  if (draggedMesh) return;
+  if (e.gamma === null || e.beta === null) return;
+  const gx = Math.max(-45, Math.min(45, e.gamma)) / 45;
+  const gy = Math.max(-45, Math.min(45, e.beta - 45)) / 45;
+  targetRot.y = 0.15 + gx * maxTilt * tiltHoriz;
+  targetRot.x = 0.12 + gy * maxTilt * tiltVert;
 }
 window.addEventListener('touchstart', function gi() { initGyro(); window.removeEventListener('touchstart', gi); }, { once: true });
 initGyro();
 
+let lastFrameMs = performance.now();
+function lerpAlpha(frameTuning, dt) {
+  const a = Math.min(frameTuning, 1);
+  return 1 - Math.pow(1 - a, dt * 60);
+}
+
 function animate() {
   requestAnimationFrame(animate);
   const now = performance.now();
+  let dt = (now - lastFrameMs) / 1000;
+  lastFrameMs = now;
+  if (dt > 0.12) dt = 0.12;
+  if (dt <= 0) dt = 1 / 60;
+  const tick = dt * 60;
+
   if (animState === 'neutral') {
     time = 0;
     if ((now - neutralPhaseStartMs) / 1000 >= neutralHoldSeconds) {
@@ -321,7 +356,7 @@ function animate() {
       time = 0;
     }
   } else {
-    time += 0.016 * motionScale;
+    time += 0.016 * motionScale * tick;
     if (time >= cyclePeriod) {
       animState = 'neutral';
       neutralPhaseStartMs = now;
@@ -329,9 +364,9 @@ function animate() {
     }
   }
 
-  lifeT += 0.016 * motionScale;
+  lifeT += 0.016 * motionScale * tick;
   const boostTarget = animState === 'playing' ? playBoostPlaying : playBoostNeutral;
-  smoothPlayBoost += (boostTarget - smoothPlayBoost) * 0.09;
+  smoothPlayBoost += (boostTarget - smoothPlayBoost) * lerpAlpha(0.09, dt);
   const playBoost = smoothPlayBoost;
   const breathe = 1 + 0.006 * playBoost * Math.sin(lifeT * 0.52);
   const swayX = Math.sin(lifeT * 0.41) * 0.012 * playBoost;
@@ -339,23 +374,26 @@ function animate() {
   const swayZ = Math.sin(lifeT * 0.27) * 0.014 * playBoost;
   ambientLight.intensity = 0.58 + 0.06 * playBoost * Math.sin(lifeT * 0.38);
 
-  currentRot.x += (targetRot.x - currentRot.x) * 0.04;
-  currentRot.y += (targetRot.y - currentRot.y) * 0.04;
+  const rotA = lerpAlpha(0.04, dt);
+  currentRot.x += (targetRot.x - currentRot.x) * rotA;
+  currentRot.y += (targetRot.y - currentRot.y) * rotA;
   group.rotation.x = currentRot.x + swayX;
   group.rotation.y = currentRot.y + swayY;
   group.rotation.z = swayZ;
   group.scale.setScalar(breathe);
 
+  const userSlideA = lerpAlpha(0.11, dt);
+  const slideFollowA = lerpAlpha(0.092, dt);
   meshes.forEach((m, i) => {
     const idleT = idleSlideAt(i, time);
     if (draggedMesh !== m) {
-      m.userData.userSlide += (0 - m.userData.userSlide) * 0.11;
+      m.userData.userSlide += (0 - m.userData.userSlide) * userSlideA;
     }
     m.userData.targetSlide = idleT + m.userData.userSlide;
   });
 
   meshes.forEach(m => {
-    m.userData.slideOffset += (m.userData.targetSlide - m.userData.slideOffset) * 0.092;
+    m.userData.slideOffset += (m.userData.targetSlide - m.userData.slideOffset) * slideFollowA;
   });
 
   enforceCollisions();
@@ -367,7 +405,7 @@ function animate() {
 
   const floatTarget =
     animState === 'playing' ? Math.sin(time * floatSpeed) * floatAmp : 0;
-  floatSmoothY += (floatTarget - floatSmoothY) * 0.14;
+  floatSmoothY += (floatTarget - floatSmoothY) * lerpAlpha(0.14, dt);
   group.position.y = floatSmoothY;
 
   renderer.render(scene, camera);
