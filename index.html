@@ -504,6 +504,53 @@
                 padding: 0 clamp(12px, 5vw, 22px);
             }
         }
+
+        /* ── OVERPRINT BANNER (interactive 3D — iframe, title links out) ── */
+        .overprint-banner {
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            overflow: hidden;
+            display: block;
+            background: #0a0a0e;
+        }
+        .overprint-banner__frame {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: block;
+        }
+        .overprint-banner .project-title {
+            z-index: 2;
+            pointer-events: auto;
+            text-decoration: none;
+            color: #fff;
+        }
+        .overprint-banner .project-title:hover {
+            opacity: 0.92;
+        }
+        [data-theme="light"] .overprint-banner {
+            background: #0c0c12;
+        }
+        [data-theme="light"] .overprint-banner .project-title {
+            color: #fff;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65);
+        }
+        @media (max-width: 768px) {
+            .overprint-banner {
+                height: 40vh;
+                min-height: 250px;
+                box-sizing: border-box;
+            }
+        }
+        @media (max-width: 480px) {
+            .overprint-banner {
+                height: 35vh;
+                min-height: 200px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -561,6 +608,10 @@
                 </div>
                 <span class="project-title">Forma</span>
             </a>
+            <div class="project-card overprint-banner" id="overprint-card">
+                <iframe class="overprint-banner__frame" src="overprint-banner.html" title="Overprint — interactive 3D logo" loading="lazy"></iframe>
+                <a href="https://overprint.site" target="_blank" rel="noopener noreferrer" class="project-title overprint-banner__title-link">Overprint</a>
+            </div>
             <a href="lvol.html" class="project-card">
                 <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047242/alternate_copy_boclcx.png" alt="Lady Vol Hockey" class="project-image lvol-cover" />
                 <span class="project-title">Lady Vol Hockey</span>
@@ -699,6 +750,7 @@
   }
   var W=0, H=0, CX=0, CY=0;
   var mouse     = { x:-9999, y:-9999 };
+  var smoothMouse = { x: -9999, y: -9999 };
   var hoverBlend= 0;
   var active    = false;
   var timeStart = 0;
@@ -737,7 +789,15 @@
     var dpr = window.devicePixelRatio||1;
     var w   = canvas.width/dpr, h = canvas.height/dpr;
     var t   = timeStart ? (now-timeStart)/1000 : 0;
-    hoverBlend += ((active?1:0)-hoverBlend)*0.08;
+    var hbTarget = active ? 1 : 0;
+    hoverBlend += (hbTarget - hoverBlend) * (active ? 0.09 : 0.14);
+    if (active) {
+      smoothMouse.x += (mouse.x - smoothMouse.x) * 0.22;
+      smoothMouse.y += (mouse.y - smoothMouse.y) * 0.22;
+    } else {
+      smoothMouse.x += (mouse.x - smoothMouse.x) * 0.18;
+      smoothMouse.y += (mouse.y - smoothMouse.y) * 0.18;
+    }
     ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.save(); ctx.scale(dpr,dpr);
     var pal = themePalette();
@@ -759,9 +819,10 @@
         var wave=(w1+w2+w3+w4)*0.25;
         var px=gx+wave*2.8*jScale+Math.sin(gy*0.11-t*1.4)*1.6*jScale;
         var py=gy+Math.cos(gx*0.09+t*1.05)*2.2*jScale+wave*2*jScale;
-        px+=Math.sin(t*6.8+gx*0.12)*1.15*jScale+Math.cos(t*4.9+gy*0.17)*0.85*jScale;
-        py+=Math.cos(t*5.5+gx*0.09)*0.95*jScale+Math.sin(t*7.1+gy*0.11)*0.75*jScale;
-        var dx=px-mouse.x, dy=py-mouse.y;
+        px+=Math.sin(t*4.2+gx*0.12)*0.65*jScale+Math.cos(t*3.4+gy*0.17)*0.5*jScale;
+        py+=Math.cos(t*3.8+gx*0.09)*0.55*jScale+Math.sin(t*4.5+gy*0.11)*0.45*jScale;
+        var mx = smoothMouse.x, my = smoothMouse.y;
+        var dx=px-mx, dy=py-my;
         var dist=Math.sqrt(dx*dx+dy*dy);
         var ht=Math.max(0,1-dist/influence);
         if (hb*ht>0.01){var push=hb*ht*ht*maxPush,ang=Math.atan2(dy,dx);px+=Math.cos(ang)*push;py+=Math.sin(ang)*push;}
@@ -816,8 +877,15 @@
   }
 
   if (!isTouch) {
-    banner.addEventListener('mouseenter', function(){ active=true; });
-    banner.addEventListener('mouseleave', function(){ active=false; mouse.x=-9999; mouse.y=-9999; });
+    banner.addEventListener('mouseenter', function(e){
+      active=true;
+      var r=banner.getBoundingClientRect();
+      mouse.x=e.clientX-r.left; mouse.y=e.clientY-r.top;
+      smoothMouse.x=mouse.x; smoothMouse.y=mouse.y;
+    });
+    banner.addEventListener('mouseleave', function(){
+      active=false;
+    });
     banner.addEventListener('mousemove',  function(e){ var r=banner.getBoundingClientRect(); mouse.x=e.clientX-r.left; mouse.y=e.clientY-r.top; });
   }
 
