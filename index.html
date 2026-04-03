@@ -534,13 +534,20 @@
             display: block;
         }
         .overprint-banner .project-title {
-            z-index: 2;
+            z-index: 3;
             pointer-events: auto;
             text-decoration: none;
             color: #fff;
         }
         .overprint-banner .project-title:hover {
             opacity: 0.92;
+        }
+        /* Same vignette as other project cards; must sit above iframe (iframe + ::before were both z-index 1). */
+        .project-card.overprint-banner::before {
+            z-index: 2;
+        }
+        [data-theme="light"] .project-card.overprint-banner::before {
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.18) 100%);
         }
         [data-theme="light"] .overprint-banner {
             background: #fff;
