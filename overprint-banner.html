@@ -10,9 +10,45 @@
 html,body{height:100%}
 body{background:#050505;overflow:hidden;cursor:default}
 canvas{display:block;touch-action:none}
+.tilt-enable-btn{
+  display:none;
+  position:fixed;
+  right:clamp(10px,3vw,18px);
+  bottom:clamp(10px,3vw,18px);
+  z-index:20;
+  padding:7px 14px;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,0.88);
+  background:rgba(18,18,22,0.55);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.14);
+  border-radius:999px;
+  cursor:pointer;
+  pointer-events:auto;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  transition:opacity 0.25s ease,transform 0.2s ease,background 0.2s ease;
+  box-shadow:0 2px 12px rgba(0,0,0,0.25);
+}
+.tilt-enable-btn:active{transform:scale(0.97)}
+body.overprint-theme-light .tilt-enable-btn{
+  color:rgba(24,24,28,0.92);
+  background:rgba(255,255,255,0.82);
+  border-color:rgba(0,0,0,0.08);
+  box-shadow:0 2px 14px rgba(0,0,0,0.08);
+}
+@media (max-width:768px){
+  .tilt-enable-btn.tilt-enable-btn--show{display:inline-flex;align-items:center;justify-content:center}
+}
 </style>
 </head>
 <body>
+<button type="button" id="tilt-enable-btn" class="tilt-enable-btn" aria-hidden="true">Tilt on</button>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ============================================
@@ -24,6 +60,7 @@ scene.background = new THREE.Color(0x050505);
 function applyOverprintTheme(light) {
   const hex = light ? 0xffffff : 0x050505;
   document.body.style.background = light ? '#ffffff' : '#050505';
+  document.body.classList.toggle('overprint-theme-light', !!light);
   scene.background = new THREE.Color(hex);
 }
 const urlThemeLight = new URLSearchParams(window.location.search).get('theme') === 'light';
@@ -366,12 +403,25 @@ canvas.addEventListener('pointerleave', () => {
   resetTiltToDefault();
 });
 
+function updateTiltButtonVisibility() {
+  const btn = document.getElementById('tilt-enable-btn');
+  if (!btn) return;
+  const needsIosStylePermission =
+    useGyroTilt &&
+    typeof DeviceOrientationEvent !== 'undefined' &&
+    typeof DeviceOrientationEvent.requestPermission === 'function' &&
+    !gyroAttached;
+  btn.classList.toggle('tilt-enable-btn--show', needsIosStylePermission);
+  btn.setAttribute('aria-hidden', needsIosStylePermission ? 'false' : 'true');
+}
+
 let gyroAttached = false;
 let gyroPermissionPending = false;
 function attachGyroListener() {
   if (gyroAttached) return;
   window.addEventListener('deviceorientation', handleGyro, { passive: true });
   gyroAttached = true;
+  updateTiltButtonVisibility();
 }
 function requestGyroPermission() {
   if (gyroAttached) return;
@@ -384,9 +434,11 @@ function requestGyroPermission() {
       .then((state) => {
         gyroPermissionPending = false;
         if (state === 'granted') attachGyroListener();
+        else updateTiltButtonVisibility();
       })
       .catch(() => {
         gyroPermissionPending = false;
+        updateTiltButtonVisibility();
       });
   } else {
     attachGyroListener();
@@ -415,6 +467,17 @@ function handleGyro(e) {
   targetRot.y = 0.15 + gx * maxTilt * tiltHoriz;
   targetRot.x = 0.12 + gy * maxTilt * tiltVert;
 }
+
+(function setupTiltEnableButton() {
+  const btn = document.getElementById('tilt-enable-btn');
+  if (!btn) return;
+  btn.setAttribute('aria-label', 'Enable motion so the logo tilts when you move your phone');
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    tryEnableGyroFromGesture();
+  });
+})();
+updateTiltButtonVisibility();
 
 let lastFrameMs = performance.now();
 function lerpAlpha(frameTuning, dt) {
