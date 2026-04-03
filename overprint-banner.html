@@ -359,8 +359,8 @@ function attachGyroListener() {
 function requestGyroPermission() {
   if (gyroAttached) return;
   if (typeof DeviceOrientationEvent === 'undefined') return;
-  if (!window.isSecureContext) return;
   if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    if (!window.isSecureContext) return;
     if (gyroPermissionPending) return;
     gyroPermissionPending = true;
     DeviceOrientationEvent.requestPermission()
