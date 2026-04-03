@@ -21,6 +21,23 @@ canvas{display:block;touch-action:none}
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x050505);
 
+function applyOverprintTheme(light) {
+  const hex = light ? 0xffffff : 0x050505;
+  document.body.style.background = light ? '#ffffff' : '#050505';
+  scene.background = new THREE.Color(hex);
+}
+const urlThemeLight = new URLSearchParams(window.location.search).get('theme') === 'light';
+if (urlThemeLight) {
+  applyOverprintTheme(true);
+}
+window.addEventListener('message', (ev) => {
+  try {
+    if (ev.data && ev.data.type === 'overprint-theme') {
+      applyOverprintTheme(ev.data.theme === 'light');
+    }
+  } catch (e) {}
+});
+
 const useGyroTilt =
   typeof navigator !== 'undefined' &&
   (navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches);

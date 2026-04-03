@@ -543,11 +543,11 @@
             opacity: 0.92;
         }
         [data-theme="light"] .overprint-banner {
-            background: #050505;
+            background: #fff;
         }
         [data-theme="light"] .overprint-banner .project-title {
-            color: #fff;
-            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65);
+            color: #111;
+            text-shadow: none;
         }
         @media (max-width: 768px) {
             .overprint-banner {
@@ -621,7 +621,7 @@
             </a>
             <div class="project-card overprint-banner" id="overprint-card">
                 <a href="https://overprint.design" target="_blank" rel="noopener noreferrer" class="overprint-banner__site-link" aria-label="Visit overprint.design"></a>
-                <iframe class="overprint-banner__frame" src="overprint-banner.html" title="Overprint — interactive 3D logo" loading="lazy" allow="accelerometer; gyroscope; magnetometer; fullscreen; autoplay"></iframe>
+                <iframe id="overprint-banner-frame" class="overprint-banner__frame" src="overprint-banner.html" title="Overprint — interactive 3D logo" loading="lazy" allow="accelerometer; gyroscope; magnetometer; fullscreen; autoplay"></iframe>
                 <a href="https://overprint.design" target="_blank" rel="noopener noreferrer" class="project-title overprint-banner__title-link">Overprint</a>
             </div>
             <a href="lvol.html" class="project-card">
@@ -663,15 +663,33 @@
         </svg>
     </button>
     <script>
+        function syncOverprintIframeTheme() {
+            const frame = document.getElementById('overprint-banner-frame');
+            if (!frame || !frame.contentWindow) return;
+            const light = document.documentElement.getAttribute('data-theme') === 'light';
+            try {
+                frame.contentWindow.postMessage({ type: 'overprint-theme', theme: light ? 'light' : 'dark' }, '*');
+            } catch (e) {}
+        }
         function toggleTheme() {
             const html = document.documentElement;
             const currentTheme = html.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
+            syncOverprintIframeTheme();
         }
         const savedTheme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
+        const overprintFrame = document.getElementById('overprint-banner-frame');
+        if (overprintFrame) {
+            overprintFrame.addEventListener('load', syncOverprintIframeTheme);
+            try {
+                if (overprintFrame.contentDocument && overprintFrame.contentDocument.readyState === 'complete') {
+                    syncOverprintIframeTheme();
+                }
+            } catch (e) {}
+        }
         let lastScrollTop = 0;
         const header = document.getElementById('main-header');
         const scrollThreshold = 100;
