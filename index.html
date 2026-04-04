@@ -594,18 +594,6 @@
             border: 0;
             display: block;
         }
-        .lvol-banner__image {
-            position: absolute;
-            z-index: 1;
-            top: var(--lvol-inset);
-            left: var(--lvol-inset);
-            width: calc(100% - 2 * var(--lvol-inset));
-            height: calc(100% - 2 * var(--lvol-inset));
-            object-fit: cover;
-            object-position: center;
-            display: block;
-            pointer-events: none;
-        }
         .lvol-banner .project-title {
             z-index: 3;
             pointer-events: auto;
@@ -704,9 +692,9 @@
                 <a href="https://overprint.design" target="_blank" rel="noopener noreferrer" class="project-title overprint-banner__title-link">Overprint</a>
             </div>
             <div class="project-card lvol-banner" id="lvol-card">
-                <a href="ladyvolds.html" class="lvol-banner__site-link" aria-label="Lady Vol Hockey — project page"></a>
-                <img class="lvol-banner__image" src="images/lvol-portfolio-banner.png" width="1024" height="775" alt="Lady Vol Hockey — blue field and ribbon border" loading="lazy" decoding="async" />
-                <a href="ladyvolds.html" class="project-title lvol-banner__title-link">Lady Vol Hockey</a>
+                <a href="lvol.html" class="lvol-banner__site-link" aria-label="Lady Vol Hockey — project page"></a>
+                <iframe id="lvol-banner-frame" class="lvol-banner__frame" src="lvol-banner.html?v=fill" title="Lady Vol Hockey — animated banner" loading="lazy"></iframe>
+                <a href="lvol.html" class="project-title lvol-banner__title-link">Lady Vol Hockey</a>
             </div>
             <a href="postcards.html" class="project-card">
                 <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047264/DSC_0127_copy_arcwlr.jpg" alt="Postcards" class="project-image" />
