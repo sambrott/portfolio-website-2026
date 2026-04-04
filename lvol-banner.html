@@ -42,7 +42,7 @@ uniform float t;
 uniform vec2  res;
 uniform float u_freq,u_warp,u_scale,u_cross,u_angle,u_speed,u_wspeed;
 uniform float u_cw,u_ow,u_bor;
-uniform float u_bx,u_by,u_rough,u_jag;
+uniform float u_bx,u_rough,u_jag;
 uniform float u_dark,u_lp,u_ls;
 
 vec2 hash2(vec2 p){
@@ -67,7 +67,8 @@ float roughBorder(vec2 suv, float bx, float by){
   float n3=vnoise(suv*u_jag*2.8 +vec2(33.1,71.9))*2.0-1.0;
   float n4=vnoise(suv*u_jag*5.1 +vec2(57.2,24.8))*2.0-1.0;
   float noise=n1*0.45+n2*0.28+n3*0.18+n4*0.09;
-  return smoothstep(-0.003,0.003,sdf-noise*u_rough);
+  float edge=sdf-noise*u_rough*0.58;
+  return smoothstep(-0.02,0.02,edge);
 }
 
 vec3 blueBg(vec2 p){
@@ -132,7 +133,7 @@ void main(){
   vec2 suv=vec2(uv.x,1.0-uv.y);
   vec2 q=suv*vec2(res.x/res.y,1.0);
   float bx=u_bx;
-  float by=u_by;
+  float by=u_bx*(res.x/max(res.y,1.0));
   float inner=roughBorder(suv,bx,by);
   float dxden=max(1.0-bx*2.0,0.0001);
   float dyden=max(1.0-by*2.0,0.0001);
@@ -163,8 +164,6 @@ void main(){
   const uRes=gl.getUniformLocation(prog,'res');
   const UL={};
   Object.keys(DEFAULTS).forEach(function(n){UL[n]=gl.getUniformLocation(prog,n);});
-  UL.u_by=gl.getUniformLocation(prog,'u_by');
-
   function applyBaseUniforms(){
     Object.keys(DEFAULTS).forEach(function(k){
       gl.uniform1f(UL[k],DEFAULTS[k]);
@@ -250,7 +249,6 @@ void main(){
       gl.uniform1f(UL.u_jag,curJag);
       gl.uniform1f(UL.u_rough,curRough);
       gl.uniform1f(UL.u_bx,curBx);
-      gl.uniform1f(UL.u_by,curBx*(lastCssW/Math.max(lastCssH,1)));
     }
 
     gl.uniform1f(uT,(ts-start)/1000);
