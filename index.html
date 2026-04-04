@@ -582,7 +582,7 @@
         .lvol-banner__site-link {
             position: absolute;
             inset: 0;
-            z-index: 0;
+            z-index: 2;
         }
         .lvol-banner__frame {
             position: absolute;
@@ -593,6 +593,7 @@
             height: calc(100% - 2 * var(--lvol-inset));
             border: 0;
             display: block;
+            pointer-events: none;
         }
         .lvol-banner .project-title {
             z-index: 3;
