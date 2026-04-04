@@ -30,6 +30,8 @@ canvas{
     u_cw:0.12,u_ow:0.235,u_bor:0.44,u_bx:0.044,u_rough:0.08,u_jag:40.0,u_dark:0.45,u_lp:0.72,u_ls:0.45
   };
   const REF_AR=4/3;
+  const REF_W=800;
+  const BORDER_PX_REF=DEFAULTS.u_bx*REF_W;
 
   const VS='attribute vec2 p;varying vec2 uv;void main(){ uv=p*.5+.5; gl_Position=vec4(p,0,1); }';
 
@@ -166,24 +168,24 @@ void main(){
     });
   }
 
-  function syncDerivedUniforms(W,H){
+  function computeTargets(W,H){
     var hh=Math.max(H,1);
-    var bx=DEFAULTS.u_bx;
-    var by=bx*(W/hh);
-    gl.uniform1f(UL.u_bx,bx);
-    gl.uniform1f(UL.u_by,by);
     var ar=W/hh;
     var wideBoost=Math.max(0,(ar/REF_AR)-1);
     var cap=1.25;
     var w=Math.min(wideBoost,cap);
     var jMul=1+0.62*w;
     var roughScale=1-0.2*w;
-    gl.uniform1f(UL.u_jag,Math.min(DEFAULTS.u_jag*jMul,88));
-    gl.uniform1f(UL.u_rough,Math.max(Math.min(DEFAULTS.u_rough*roughScale,0.12),0.03));
+    var jagT=Math.min(DEFAULTS.u_jag*jMul,88);
+    var roughT=Math.max(Math.min(DEFAULTS.u_rough*roughScale,0.12),0.03);
+    var bxT=BORDER_PX_REF/Math.max(W,1);
+    bxT=Math.max(0.02,Math.min(0.068,bxT));
+    return{jag:jagT,rough:roughT,bx:bxT};
   }
 
   applyBaseUniforms();
 
+  var lastBufW=0,lastBufH=0;
   var lastW=0,lastH=0;
   var resizeDebounce=null;
   function applySize(){
@@ -194,8 +196,7 @@ void main(){
     c.width=W;
     c.height=H;
     gl.viewport(0,0,W,H);
-    gl.uniform2f(uRes,W,H);
-    syncDerivedUniforms(W,H);
+    lastBufW=W;lastBufH=H;
   }
 
   function scheduleResizeDebounced(){
@@ -207,14 +208,42 @@ void main(){
   }
 
   applySize();
+
+  var curJag=DEFAULTS.u_jag,curRough=DEFAULTS.u_rough,curBx=DEFAULTS.u_bx;
+  if(lastBufW>=2&&lastBufH>=2){
+    var tInit=computeTargets(lastBufW,lastBufH);
+    curJag=tInit.jag;curRough=tInit.rough;curBx=tInit.bx;
+  }
+
   new ResizeObserver(scheduleResizeDebounced).observe(wrap);
   window.addEventListener('resize',scheduleResizeDebounced,{passive:true});
 
   var start=null;
+  var prevTs=0;
+  var SMOOTH_HZ=7.2;
   (function loop(ts){
     if(!start)start=ts;
+    if(!prevTs)prevTs=ts;
+    var dt=Math.min((ts-prevTs)/1000,0.1);
+    prevTs=ts;
+    var a=1-Math.exp(-dt*SMOOTH_HZ);
+
+    if(lastBufW>=2&&lastBufH>=2){
+      var tgt=computeTargets(lastBufW,lastBufH);
+      curJag+=(tgt.jag-curJag)*a;
+      curRough+=(tgt.rough-curRough)*a;
+      curBx+=(tgt.bx-curBx)*a;
+      gl.uniform1f(UL.u_jag,curJag);
+      gl.uniform1f(UL.u_rough,curRough);
+      gl.uniform1f(UL.u_bx,curBx);
+      gl.uniform1f(UL.u_by,curBx*(lastBufW/Math.max(lastBufH,1)));
+    }
+
     gl.uniform1f(uT,(ts-start)/1000);
-    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    if(lastBufW>=2&&lastBufH>=2){
+      gl.uniform2f(uRes,lastBufW,lastBufH);
+      gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    }
     requestAnimationFrame(loop);
   })();
 })();
