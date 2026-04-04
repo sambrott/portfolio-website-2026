@@ -67,8 +67,7 @@ float roughBorder(vec2 suv, float bx, float by){
   float n3=vnoise(suv*u_jag*2.8 +vec2(33.1,71.9))*2.0-1.0;
   float n4=vnoise(suv*u_jag*5.1 +vec2(57.2,24.8))*2.0-1.0;
   float noise=n1*0.45+n2*0.28+n3*0.18+n4*0.09;
-  float edge=sdf-noise*u_rough*0.58;
-  return smoothstep(-0.02,0.02,edge);
+  return smoothstep(-0.003,0.003,sdf-noise*u_rough);
 }
 
 vec3 blueBg(vec2 p){
@@ -133,7 +132,7 @@ void main(){
   vec2 suv=vec2(uv.x,1.0-uv.y);
   vec2 q=suv*vec2(res.x/res.y,1.0);
   float bx=u_bx;
-  float by=u_bx*(res.x/max(res.y,1.0));
+  float by=u_bx*(res.x/max(res.y,1.0))*0.75;
   float inner=roughBorder(suv,bx,by);
   float dxden=max(1.0-bx*2.0,0.0001);
   float dyden=max(1.0-by*2.0,0.0001);
@@ -170,7 +169,7 @@ void main(){
     });
   }
 
-  function computeTargets(cssW,cssH){
+  function computeTargets(cssW,cssH,bufW,bufH){
     var hh=Math.max(cssH,1);
     var ar=cssW/hh;
     var wideBoost=Math.max(0,(ar/REF_AR)-1);
@@ -188,7 +187,15 @@ void main(){
     }
     var bxT=BORDER_PX_REF/Math.max(cssW,1);
     bxT=Math.max(0.02,Math.min(0.068,bxT));
-    return{jag:jagT,rough:roughT,bx:bxT};
+    var bxUniform=bxT;
+    if(bufW>=2&&bufH>=2){
+      var bpxBuf=bxT*bufW;
+      var limPx=0.40;
+      var bpxMax=Math.min(limPx*bufW,limPx*bufH);
+      if(bpxBuf>bpxMax)bpxBuf=bpxMax;
+      bxUniform=bpxBuf/bufW;
+    }
+    return{jag:jagT,rough:roughT,bx:bxUniform};
   }
 
   applyBaseUniforms();
@@ -223,8 +230,8 @@ void main(){
   applySize();
 
   var curJag=DEFAULTS.u_jag,curRough=DEFAULTS.u_rough,curBx=DEFAULTS.u_bx;
-  if(lastCssW>=2&&lastCssH>=2){
-    var tInit=computeTargets(lastCssW,lastCssH);
+  if(lastCssW>=2&&lastCssH>=2&&lastBufW>=2&&lastBufH>=2){
+    var tInit=computeTargets(lastCssW,lastCssH,lastBufW,lastBufH);
     curJag=tInit.jag;curRough=tInit.rough;curBx=tInit.bx;
   }
 
@@ -242,7 +249,7 @@ void main(){
     var a=1-Math.exp(-dt*SMOOTH_HZ);
 
     if(lastCssW>=2&&lastCssH>=2&&lastBufW>=2&&lastBufH>=2){
-      var tgt=computeTargets(lastCssW,lastCssH);
+      var tgt=computeTargets(lastCssW,lastCssH,lastBufW,lastBufH);
       curJag+=(tgt.jag-curJag)*a;
       curRough+=(tgt.rough-curRough)*a;
       curBx+=(tgt.bx-curBx)*a;
