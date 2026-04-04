@@ -67,8 +67,9 @@ float roughBorder(vec2 suv, float bx, float by){
   float n3=vnoise(suv*u_jag*2.8 +vec2(33.1,71.9))*2.0-1.0;
   float n4=vnoise(suv*u_jag*5.1 +vec2(57.2,24.8))*2.0-1.0;
   float noise=n1*0.45+n2*0.28+n3*0.18+n4*0.09;
-  float edge=sdf-noise*u_rough*0.58;
-  return smoothstep(-0.02,0.02,edge);
+  float nAmp=smoothstep(0.0,0.16,max(sdf,0.0));
+  float edge=sdf-noise*u_rough*0.58*nAmp;
+  return smoothstep(-0.055,0.055,edge);
 }
 
 vec3 blueBg(vec2 p){
@@ -133,7 +134,8 @@ void main(){
   vec2 suv=vec2(uv.x,1.0-uv.y);
   vec2 q=suv*vec2(res.x/res.y,1.0);
   float ar=res.x/max(res.y,1.0);
-  float bx=min(u_bx,min(0.49,0.49/ar));
+  float lim=0.40;
+  float bx=min(u_bx,min(lim,lim/ar));
   float by=bx*ar;
   float inner=roughBorder(suv,bx,by);
   float dxden=max(1.0-bx*2.0,0.0001);
@@ -192,7 +194,8 @@ void main(){
     var bxUniform=bxT;
     if(bufW>=2&&bufH>=2){
       var bpxBuf=bxT*bufW;
-      var bpxMax=Math.min(0.49*bufW,0.49*bufH);
+      var limPx=0.40;
+      var bpxMax=Math.min(limPx*bufW,limPx*bufH);
       if(bpxBuf>bpxMax)bpxBuf=bpxMax;
       bxUniform=bpxBuf/bufW;
     }
