@@ -27,7 +27,7 @@ canvas{
 
   const DEFAULTS={
     u_freq:1.38,u_warp:5.4,u_scale:1.35,u_cross:0.4,u_angle:0.8,u_speed:0.19,u_wspeed:0.155,
-    u_cw:0.12,u_ow:0.235,u_bor:0.44,u_bx:0.044,u_rough:0.08,u_jag:40.0,u_dark:0.45,u_lp:0.72,u_ls:0.45
+    u_cw:0.12,u_ow:0.235,u_bor:0.44,u_bx:0.044,u_rough:0.08,u_jag:40.0,u_dark:0.22,u_lp:0.72,u_ls:0.45
   };
   const REF_AR=4/3;
   const REF_W=800;
@@ -67,15 +67,15 @@ float innerSdf(vec2 suv, float bx, float by){
 vec3 blueBg(vec2 p){
   float d=distance(p,vec2(0.5,0.48));
   float r=clamp(d/u_lp,0.0,1.0);
-  vec3 cC=mix(vec3(0.714,0.894,1.000),vec3(0.18,0.50,0.88),u_dark);
-  vec3 cM=mix(vec3(0.322,0.714,1.000),vec3(0.09,0.34,0.72),u_dark);
-  vec3 cE=mix(vec3(0.110,0.510,0.902),vec3(0.03,0.18,0.55),u_dark);
+  vec3 cC=mix(vec3(0.62,0.88,1.000),vec3(0.22,0.58,0.96),u_dark);
+  vec3 cM=mix(vec3(0.38,0.76,1.000),vec3(0.12,0.42,0.88),u_dark);
+  vec3 cE=mix(vec3(0.18,0.52,0.95),vec3(0.06,0.28,0.72),u_dark);
   vec3 col=mix(cC,cM,smoothstep(0.0,0.55,r));
-      col=mix(col,cE,smoothstep(0.45,1.0,r));
-  col+=vec3(1.0)*(1.0-smoothstep(0.0,u_lp*0.48,d))*u_ls*0.16;
+  col=mix(col,cE,smoothstep(0.45,1.0,r));
+  col+=vec3(1.0)*(1.0-smoothstep(0.0,u_lp*0.48,d))*u_ls*0.22;
   vec2 gp=floor(p*res*0.85);
   float g=fract(sin(dot(gp,vec2(127.1,311.7)))*43758.5453)-0.5;
-  col+=vec3(g*0.040);
+  col+=vec3(g*0.028);
   return clamp(col,0.0,1.0);
 }
 
@@ -130,8 +130,11 @@ void main(){
   float bx=min(u_bx,min(lim,lim/ar));
   float by=bx*ar;
   float sdf=innerSdf(suv,bx,by);
-  float wSoft=0.085+0.035*u_rough;
-  float kBlue=smoothstep(0.0,wSoft,sdf);
+  float wSoft=0.062+0.028*u_rough;
+  float kSdf=smoothstep(0.0,wSoft,sdf);
+  float dC=length(vec2(suv.x-0.5,(suv.y-0.5)/ar));
+  float kRadial=1.0-smoothstep(0.0,0.42,dC);
+  float kBlue=clamp(max(kSdf,kRadial),0.0,1.0);
   float dxden=max(1.0-bx*2.0,0.0001);
   float dyden=max(1.0-by*2.0,0.0001);
   vec2 ip=clamp(vec2((suv.x-bx)/dxden,(suv.y-by)/dyden),0.0,1.0);
