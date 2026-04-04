@@ -175,16 +175,17 @@ void main(){
     var ar=W/hh;
     var wideBoost=Math.max(0,(ar/REF_AR)-1);
     var cap=1.25;
-    var jMul=1+0.62*Math.min(wideBoost,cap);
-    var rMul=1+0.42*Math.min(wideBoost,cap);
+    var w=Math.min(wideBoost,cap);
+    var jMul=1+0.62*w;
+    var roughScale=1-0.2*w;
     gl.uniform1f(UL.u_jag,Math.min(DEFAULTS.u_jag*jMul,88));
-    gl.uniform1f(UL.u_rough,Math.min(DEFAULTS.u_rough*rMul,0.12));
+    gl.uniform1f(UL.u_rough,Math.max(Math.min(DEFAULTS.u_rough*roughScale,0.12),0.03));
   }
 
   applyBaseUniforms();
 
   var lastW=0,lastH=0;
-  var resizeRaf=0;
+  var resizeDebounce=null;
   function applySize(){
     var W=wrap.offsetWidth|0,H=wrap.offsetHeight|0;
     if(W<2||H<2)return;
@@ -197,17 +198,17 @@ void main(){
     syncDerivedUniforms(W,H);
   }
 
-  function scheduleResize(){
-    if(resizeRaf)return;
-    resizeRaf=requestAnimationFrame(function(){
-      resizeRaf=0;
+  function scheduleResizeDebounced(){
+    if(resizeDebounce)clearTimeout(resizeDebounce);
+    resizeDebounce=setTimeout(function(){
+      resizeDebounce=null;
       applySize();
-    });
+    },110);
   }
 
   applySize();
-  new ResizeObserver(scheduleResize).observe(wrap);
-  requestAnimationFrame(scheduleResize);
+  new ResizeObserver(scheduleResizeDebounced).observe(wrap);
+  window.addEventListener('resize',scheduleResizeDebounced,{passive:true});
 
   var start=null;
   (function loop(ts){
