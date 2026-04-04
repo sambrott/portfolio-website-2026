@@ -32,6 +32,7 @@ canvas{
   const REF_AR=4/3;
   const REF_W=800;
   const BORDER_PX_REF=DEFAULTS.u_bx*REF_W;
+  const MOBILE_MAX_CSS=768;
 
   const VS='attribute vec2 p;varying vec2 uv;void main(){ uv=p*.5+.5; gl_Position=vec4(p,0,1); }';
 
@@ -133,7 +134,9 @@ void main(){
   float bx=u_bx;
   float by=u_by;
   float inner=roughBorder(suv,bx,by);
-  vec2 ip=vec2((suv.x-bx)/(1.0-bx*2.0),(suv.y-by)/(1.0-by*2.0));
+  float dxden=max(1.0-bx*2.0,0.0001);
+  float dyden=max(1.0-by*2.0,0.0001);
+  vec2 ip=clamp(vec2((suv.x-bx)/dxden,(suv.y-by)/dyden),0.0,1.0);
   gl_FragColor=vec4(mix(swirlColor(q),blueBg(ip),inner),1.0);
 }`;
 
@@ -168,9 +171,9 @@ void main(){
     });
   }
 
-  function computeTargets(W,H){
-    var hh=Math.max(H,1);
-    var ar=W/hh;
+  function computeTargets(cssW,cssH){
+    var hh=Math.max(cssH,1);
+    var ar=cssW/hh;
     var wideBoost=Math.max(0,(ar/REF_AR)-1);
     var cap=1.25;
     var w=Math.min(wideBoost,cap);
@@ -178,7 +181,13 @@ void main(){
     var roughScale=1-0.2*w;
     var jagT=Math.min(DEFAULTS.u_jag*jMul,88);
     var roughT=Math.max(Math.min(DEFAULTS.u_rough*roughScale,0.12),0.03);
-    var bxT=BORDER_PX_REF/Math.max(W,1);
+    if(cssW>MOBILE_MAX_CSS){
+      var sizeT=Math.min(1,Math.max(0,(cssW-MOBILE_MAX_CSS)/1600));
+      var extraDown=0.28*sizeT+0.42*sizeT*sizeT;
+      roughT*=1-extraDown;
+      roughT=Math.max(roughT,0.02);
+    }
+    var bxT=BORDER_PX_REF/Math.max(cssW,1);
     bxT=Math.max(0.02,Math.min(0.068,bxT));
     return{jag:jagT,rough:roughT,bx:bxT};
   }
@@ -186,6 +195,7 @@ void main(){
   applyBaseUniforms();
 
   var lastBufW=0,lastBufH=0;
+  var lastCssW=0,lastCssH=0;
   var lastW=0,lastH=0;
   var resizeDebounce=null;
   function applySize(){
@@ -193,10 +203,14 @@ void main(){
     if(W<2||H<2)return;
     if(W===lastW&&H===lastH)return;
     lastW=W;lastH=H;
-    c.width=W;
-    c.height=H;
-    gl.viewport(0,0,W,H);
-    lastBufW=W;lastBufH=H;
+    lastCssW=W;lastCssH=H;
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var bw=Math.max(1,Math.round(W*dpr));
+    var bh=Math.max(1,Math.round(H*dpr));
+    c.width=bw;
+    c.height=bh;
+    gl.viewport(0,0,bw,bh);
+    lastBufW=bw;lastBufH=bh;
   }
 
   function scheduleResizeDebounced(){
@@ -210,8 +224,8 @@ void main(){
   applySize();
 
   var curJag=DEFAULTS.u_jag,curRough=DEFAULTS.u_rough,curBx=DEFAULTS.u_bx;
-  if(lastBufW>=2&&lastBufH>=2){
-    var tInit=computeTargets(lastBufW,lastBufH);
+  if(lastCssW>=2&&lastCssH>=2){
+    var tInit=computeTargets(lastCssW,lastCssH);
     curJag=tInit.jag;curRough=tInit.rough;curBx=tInit.bx;
   }
 
@@ -228,15 +242,15 @@ void main(){
     prevTs=ts;
     var a=1-Math.exp(-dt*SMOOTH_HZ);
 
-    if(lastBufW>=2&&lastBufH>=2){
-      var tgt=computeTargets(lastBufW,lastBufH);
+    if(lastCssW>=2&&lastCssH>=2&&lastBufW>=2&&lastBufH>=2){
+      var tgt=computeTargets(lastCssW,lastCssH);
       curJag+=(tgt.jag-curJag)*a;
       curRough+=(tgt.rough-curRough)*a;
       curBx+=(tgt.bx-curBx)*a;
       gl.uniform1f(UL.u_jag,curJag);
       gl.uniform1f(UL.u_rough,curRough);
       gl.uniform1f(UL.u_bx,curBx);
-      gl.uniform1f(UL.u_by,curBx*(lastBufW/Math.max(lastBufH,1)));
+      gl.uniform1f(UL.u_by,curBx*(lastCssW/Math.max(lastCssH,1)));
     }
 
     gl.uniform1f(uT,(ts-start)/1000);
