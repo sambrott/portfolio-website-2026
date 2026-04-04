@@ -132,8 +132,9 @@ vec3 swirlColor(vec2 q){
 void main(){
   vec2 suv=vec2(uv.x,1.0-uv.y);
   vec2 q=suv*vec2(res.x/res.y,1.0);
-  float bx=u_bx;
-  float by=u_bx*(res.x/max(res.y,1.0));
+  float ar=res.x/max(res.y,1.0);
+  float bx=min(u_bx,min(0.49,0.49/ar));
+  float by=bx*ar;
   float inner=roughBorder(suv,bx,by);
   float dxden=max(1.0-bx*2.0,0.0001);
   float dyden=max(1.0-by*2.0,0.0001);
@@ -170,7 +171,7 @@ void main(){
     });
   }
 
-  function computeTargets(cssW,cssH){
+  function computeTargets(cssW,cssH,bufW,bufH){
     var hh=Math.max(cssH,1);
     var ar=cssW/hh;
     var wideBoost=Math.max(0,(ar/REF_AR)-1);
@@ -188,7 +189,14 @@ void main(){
     }
     var bxT=BORDER_PX_REF/Math.max(cssW,1);
     bxT=Math.max(0.02,Math.min(0.068,bxT));
-    return{jag:jagT,rough:roughT,bx:bxT};
+    var bxUniform=bxT;
+    if(bufW>=2&&bufH>=2){
+      var bpxBuf=bxT*bufW;
+      var bpxMax=Math.min(0.49*bufW,0.49*bufH);
+      if(bpxBuf>bpxMax)bpxBuf=bpxMax;
+      bxUniform=bpxBuf/bufW;
+    }
+    return{jag:jagT,rough:roughT,bx:bxUniform};
   }
 
   applyBaseUniforms();
@@ -223,8 +231,8 @@ void main(){
   applySize();
 
   var curJag=DEFAULTS.u_jag,curRough=DEFAULTS.u_rough,curBx=DEFAULTS.u_bx;
-  if(lastCssW>=2&&lastCssH>=2){
-    var tInit=computeTargets(lastCssW,lastCssH);
+  if(lastCssW>=2&&lastCssH>=2&&lastBufW>=2&&lastBufH>=2){
+    var tInit=computeTargets(lastCssW,lastCssH,lastBufW,lastBufH);
     curJag=tInit.jag;curRough=tInit.rough;curBx=tInit.bx;
   }
 
@@ -242,7 +250,7 @@ void main(){
     var a=1-Math.exp(-dt*SMOOTH_HZ);
 
     if(lastCssW>=2&&lastCssH>=2&&lastBufW>=2&&lastBufH>=2){
-      var tgt=computeTargets(lastCssW,lastCssH);
+      var tgt=computeTargets(lastCssW,lastCssH,lastBufW,lastBufH);
       curJag+=(tgt.jag-curJag)*a;
       curRough+=(tgt.rough-curRough)*a;
       curBx+=(tgt.bx-curBx)*a;
