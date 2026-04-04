@@ -7,8 +7,12 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0a;}
-.banner-wrap{width:100%;height:100%;position:relative;display:block;}
-canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block;}
+.banner-wrap{width:100%;height:100%;position:relative;display:block;background:#0a0a0a;}
+canvas{
+  position:absolute;top:0;left:0;width:100%;height:100%;display:block;
+  background:#0a0a0a;
+  vertical-align:top;
+}
 </style>
 </head>
 <body>
@@ -17,13 +21,15 @@ canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block;}
 (function(){
   const wrap=document.getElementById('wrap');
   const c=document.getElementById('c');
-  const gl=c.getContext('webgl');
+  const gl=c.getContext('webgl',{alpha:false,antialias:true});
   if(!gl){document.body.innerHTML='<p style="color:red;padding:20px">WebGL not supported</p>';return;}
+  gl.disable(gl.DEPTH_TEST);
 
   const DEFAULTS={
     u_freq:1.38,u_warp:5.4,u_scale:1.35,u_cross:0.4,u_angle:0.8,u_speed:0.19,u_wspeed:0.155,
-    u_cw:0.12,u_ow:0.235,u_bor:0.44,u_bx:0.072,u_rough:0.08,u_jag:40.0,u_dark:0.45,u_lp:0.72,u_ls:0.45
+    u_cw:0.12,u_ow:0.235,u_bor:0.44,u_bx:0.044,u_rough:0.08,u_jag:40.0,u_dark:0.45,u_lp:0.72,u_ls:0.45
   };
+  const REF_AR=4/3;
 
   const VS='attribute vec2 p;varying vec2 uv;void main(){ uv=p*.5+.5; gl_Position=vec4(p,0,1); }';
 
@@ -33,7 +39,7 @@ uniform float t;
 uniform vec2  res;
 uniform float u_freq,u_warp,u_scale,u_cross,u_angle,u_speed,u_wspeed;
 uniform float u_cw,u_ow,u_bor;
-uniform float u_bx,u_rough,u_jag;
+uniform float u_bx,u_by,u_rough,u_jag;
 uniform float u_dark,u_lp,u_ls;
 
 vec2 hash2(vec2 p){
@@ -123,7 +129,7 @@ void main(){
   vec2 suv=vec2(uv.x,1.0-uv.y);
   vec2 q=suv*vec2(res.x/res.y,1.0);
   float bx=u_bx;
-  float by=u_bx*(res.x/res.y)*0.75;
+  float by=u_by;
   float inner=roughBorder(suv,bx,by);
   vec2 ip=vec2((suv.x-bx)/(1.0-bx*2.0),(suv.y-by)/(1.0-by*2.0));
   gl_FragColor=vec4(mix(swirlColor(q),blueBg(ip),inner),1.0);
@@ -152,22 +158,58 @@ void main(){
   const uRes=gl.getUniformLocation(prog,'res');
   const UL={};
   Object.keys(DEFAULTS).forEach(function(n){UL[n]=gl.getUniformLocation(prog,n);});
+  UL.u_by=gl.getUniformLocation(prog,'u_by');
 
-  function applyDefaults(){
+  function applyBaseUniforms(){
     Object.keys(DEFAULTS).forEach(function(k){
       gl.uniform1f(UL[k],DEFAULTS[k]);
     });
   }
-  applyDefaults();
 
-  new ResizeObserver(function(){
-    const W=wrap.offsetWidth,H=wrap.offsetHeight;
-    c.width=W;c.height=H;
+  function syncDerivedUniforms(W,H){
+    var hh=Math.max(H,1);
+    var bx=DEFAULTS.u_bx;
+    var by=bx*(W/hh);
+    gl.uniform1f(UL.u_bx,bx);
+    gl.uniform1f(UL.u_by,by);
+    var ar=W/hh;
+    var wideBoost=Math.max(0,(ar/REF_AR)-1);
+    var cap=1.25;
+    var jMul=1+0.62*Math.min(wideBoost,cap);
+    var rMul=1+0.42*Math.min(wideBoost,cap);
+    gl.uniform1f(UL.u_jag,Math.min(DEFAULTS.u_jag*jMul,88));
+    gl.uniform1f(UL.u_rough,Math.min(DEFAULTS.u_rough*rMul,0.12));
+  }
+
+  applyBaseUniforms();
+
+  var lastW=0,lastH=0;
+  var resizeRaf=0;
+  function applySize(){
+    var W=wrap.offsetWidth|0,H=wrap.offsetHeight|0;
+    if(W<2||H<2)return;
+    if(W===lastW&&H===lastH)return;
+    lastW=W;lastH=H;
+    c.width=W;
+    c.height=H;
     gl.viewport(0,0,W,H);
     gl.uniform2f(uRes,W,H);
-  }).observe(wrap);
+    syncDerivedUniforms(W,H);
+  }
 
-  let start=null;
+  function scheduleResize(){
+    if(resizeRaf)return;
+    resizeRaf=requestAnimationFrame(function(){
+      resizeRaf=0;
+      applySize();
+    });
+  }
+
+  applySize();
+  new ResizeObserver(scheduleResize).observe(wrap);
+  requestAnimationFrame(scheduleResize);
+
+  var start=null;
   (function loop(ts){
     if(!start)start=ts;
     gl.uniform1f(uT,(ts-start)/1000);
