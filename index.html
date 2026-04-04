@@ -142,7 +142,6 @@
             display: block;
             transition: opacity 0.3s;
         }
-        .project-image.lvol-cover { object-position: center center; }
         .banquet-hero {
             background-color: #AE122A;
             display: flex;
@@ -569,6 +568,67 @@
                 min-height: 200px;
             }
         }
+
+        /* ── LADY VOL HOCKEY BANNER (WebGL — iframe, same layout as Overprint) ── */
+        .lvol-banner {
+            --lvol-inset: clamp(8px, 2vw, 18px);
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            overflow: hidden;
+            display: block;
+            background: #0a0a0a;
+        }
+        .lvol-banner__site-link {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+        .lvol-banner__frame {
+            position: absolute;
+            z-index: 1;
+            top: var(--lvol-inset);
+            left: var(--lvol-inset);
+            width: calc(100% - 2 * var(--lvol-inset));
+            height: calc(100% - 2 * var(--lvol-inset));
+            border: 0;
+            display: block;
+        }
+        .lvol-banner .project-title {
+            z-index: 3;
+            pointer-events: auto;
+            text-decoration: none;
+            color: #fff;
+        }
+        .lvol-banner .project-title:hover {
+            opacity: 0.92;
+        }
+        .project-card.lvol-banner::before {
+            z-index: 2;
+        }
+        [data-theme="light"] .project-card.lvol-banner::before {
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.18) 100%);
+        }
+        [data-theme="light"] .lvol-banner {
+            background: #f0f0f0;
+        }
+        [data-theme="light"] .lvol-banner .project-title {
+            color: #111;
+            text-shadow: none;
+        }
+        @media (max-width: 768px) {
+            .lvol-banner {
+                height: 40vh;
+                min-height: 250px;
+                box-sizing: border-box;
+            }
+        }
+        @media (max-width: 480px) {
+            .lvol-banner {
+                height: 35vh;
+                min-height: 200px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -631,10 +691,11 @@
                 <iframe id="overprint-banner-frame" class="overprint-banner__frame" src="overprint-banner.html" title="Overprint — interactive 3D logo" loading="lazy" allow="accelerometer; gyroscope; magnetometer; fullscreen; autoplay"></iframe>
                 <a href="https://overprint.design" target="_blank" rel="noopener noreferrer" class="project-title overprint-banner__title-link">Overprint</a>
             </div>
-            <a href="lvol.html" class="project-card">
-                <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047242/alternate_copy_boclcx.png" alt="Lady Vol Hockey" class="project-image lvol-cover" />
-                <span class="project-title">Lady Vol Hockey</span>
-            </a>
+            <div class="project-card lvol-banner" id="lvol-card">
+                <a href="lvol.html" class="lvol-banner__site-link" aria-label="Lady Vol Hockey — project page"></a>
+                <iframe id="lvol-banner-frame" class="lvol-banner__frame" src="lvol-banner.html" title="Lady Vol Hockey — animated banner" loading="lazy"></iframe>
+                <a href="lvol.html" class="project-title lvol-banner__title-link">Lady Vol Hockey</a>
+            </div>
             <a href="postcards.html" class="project-card">
                 <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047264/DSC_0127_copy_arcwlr.jpg" alt="Postcards" class="project-image" />
                 <span class="project-title">Postcards</span>
