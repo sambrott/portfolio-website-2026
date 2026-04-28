@@ -264,12 +264,65 @@
             justify-content: center;
         }
 
+        .lightbox-pan {
+            /* mobile: just a flex container */
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
         .lightbox-content img,
         .lightbox-content video {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
             border-radius: 4px;
+        }
+
+        /*
+         * Desktop zoom architecture:
+         * #lightbox-pan: positioned absolutely at center of content box.
+         *   transform = translate(-50%,-50%) scale(fitScale)   → fit view
+         *   transform = translate(calc(-50% + panX),…) scale(1) → zoomed view
+         * #lightbox-img: no max-width/height → renders at its natural pixel size.
+         *   At zoom=1 the browser shows actual decoded Cloudinary pixels (no upscaling).
+         */
+        @media (min-width: 769px) and (pointer: fine) {
+            .lightbox-zoom-host .lightbox-content {
+                overflow: hidden;
+                touch-action: none;
+            }
+            .lightbox-zoom-host #lightbox-pan {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: auto;
+                height: auto;
+                display: none;
+                transform-origin: 50% 50%;
+                will-change: transform;
+                transition: none;
+            }
+            .lightbox-zoom-host.lb-prog-zoom #lightbox-pan {
+                transition: transform 0.48s cubic-bezier(0.22, 1, 0.36, 1) !important;
+            }
+            .lightbox-zoom-host #lightbox-img {
+                display: block;
+                width: auto;
+                height: auto;
+                max-width: none !important;
+                max-height: none !important;
+                border-radius: 4px;
+                user-select: none;
+                cursor: zoom-in;
+                backface-visibility: hidden;
+                will-change: auto;
+            }
+            .lightbox-zoom-host.lightbox-zoom-pan-ready #lightbox-img {
+                cursor: crosshair;
+            }
         }
 
         .lightbox-close {
@@ -531,11 +584,13 @@
       </div>
     </main>
 
-    <div class="lightbox" id="lightbox">
+    <div class="lightbox lightbox-zoom-host" id="lightbox">
         <button class="lightbox-close" onclick="closeLightbox()">×</button>
         <button class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1)">‹</button>
         <div class="lightbox-content" id="lightbox-content">
-            <img id="lightbox-img" src="" alt="" />
+            <div id="lightbox-pan" class="lightbox-pan" aria-hidden="true">
+              <img id="lightbox-img" src="" alt="" decoding="async" loading="eager" fetchpriority="high" />
+            </div>
             <video id="lightbox-video" src="" autoplay loop playsinline style="display:none;"></video>
         </div>
         <button class="lightbox-nav lightbox-next" onclick="navigateLightbox(1)">›</button>
@@ -640,10 +695,218 @@
         // Lightbox for video + carousel images
         const mediaItems = [];
         const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxPan = document.getElementById('lightbox-pan');
         const lightboxVideo = document.getElementById('lightbox-video');
         const lightboxContent = document.getElementById('lightbox-content');
+        const lightboxEl = document.getElementById('lightbox');
+        const mqDesktopLb = window.matchMedia('(min-width: 769px) and (pointer: fine)');
 
-        // Add the main video
+        /*
+         * Pan ease: smoothing factor per frame (0=instant, 1=frozen).
+         * H and V share the same factor so they feel identical.
+         */
+        const LB_PAN_EASE = 0.35;
+
+        /* ── Cloudinary HQ URL ─────────────────────────────────────────────── */
+        function lbApproxContentW() {
+            let w = lightboxContent.getBoundingClientRect().width;
+            if (!w || w < 80) w = window.innerWidth * 0.9;
+            return Math.max(480, w);
+        }
+
+        function cloudinaryBarePath(url) {
+            const ix = url.indexOf('/image/upload/');
+            if (ix === -1) return '';
+            const rest = url.slice(ix + '/image/upload/'.length);
+            const vm = rest.match(/v\d+\/.+/i);
+            return vm ? vm[0] : (/^[^/]+\//.test(rest) ? rest : '');
+        }
+
+        function cloudinaryLightboxHQ(url) {
+            if (!url || !url.includes('res.cloudinary.com')) return url;
+            const ix = url.indexOf('/image/upload/');
+            if (ix === -1) return url;
+            const bare = cloudinaryBarePath(url);
+            if (!bare) return url;
+            /*
+             * Request an image whose decoded pixel width covers the
+             * full content width at device pixel ratio (no zoom headroom
+             * needed — the wrapper scale just re-crops the decoded pixels).
+             */
+            const dpr = Math.min(3, Math.max(window.devicePixelRatio || 1, 1));
+            const w = Math.min(4096, Math.max(1200, Math.ceil(lbApproxContentW() * dpr / 64) * 64));
+            const chain = `w_${w},c_limit,q_auto:best,f_auto`;
+            return `${url.slice(0, ix + '/image/upload/'.length)}${chain}/${bare}`;
+        }
+
+        const lbPrefetch = new Set();
+        function prefetchCloudinaryLb(rawSrc) {
+            if (!mqDesktopLb.matches || lbPrefetch.has(rawSrc)) return;
+            lbPrefetch.add(rawSrc);
+            try {
+                const img = new Image();
+                img.decoding = 'async';
+                img.src = cloudinaryLightboxHQ(rawSrc);
+            } catch (_) {}
+        }
+
+        /* ── State ─────────────────────────────────────────────────────────── */
+        let lbIsZoomed   = false;
+        let lbFitScale   = 1;        // scale to fit img natural size into content box
+        let lbOrigSrc    = '';       // original (full-res) src for the current slide
+        let lbPanNX      = 0;        // current normalised pan (−1…1)
+        let lbPanNY      = 0;
+        let lbTarNX      = 0;        // target normalised pan
+        let lbTarNY      = 0;
+        let lbSmoothRaf  = null;
+        let lbTweenTimer = null;
+        let lbTweenH     = null;     // transitionend handler on pan wrapper
+
+        function lbClearTween() {
+            if (lbTweenTimer) { clearTimeout(lbTweenTimer); lbTweenTimer = null; }
+            if (lbTweenH)     { lightboxPan.removeEventListener('transitionend', lbTweenH); lbTweenH = null; }
+        }
+
+        /* ── Fit-scale ──────────────────────────────────────────────────────── */
+        function lbComputeFitScale() {
+            const cw = lightboxContent.offsetWidth  || window.innerWidth  * 0.9;
+            const ch = lightboxContent.offsetHeight || window.innerHeight * 0.9;
+            const iw = lightboxImg.naturalWidth  || lightboxImg.offsetWidth  || 1;
+            const ih = lightboxImg.naturalHeight || lightboxImg.offsetHeight || 1;
+            return Math.min(1, cw / iw, ch / ih);
+        }
+
+        /* ── Transform helpers ──────────────────────────────────────────────── */
+        function lbFitTransform(scale) {
+            return `translate(-50%, -50%) scale(${scale})`;
+        }
+
+        function lbZoomedTransform(panNX, panNY) {
+            // max px each axis the img overflows the container at scale=1
+            const cw = lightboxContent.offsetWidth;
+            const ch = lightboxContent.offsetHeight;
+            const iw = lightboxImg.naturalWidth  || lightboxImg.offsetWidth;
+            const ih = lightboxImg.naturalHeight || lightboxImg.offsetHeight;
+            const maxX = Math.max(0, (iw - cw) / 2);
+            const maxY = Math.max(0, (ih - ch) / 2);
+            const px = panNX * maxX;
+            const py = panNY * maxY;
+            return `translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) scale(1)`;
+        }
+
+        /* Apply current state immediately (no transition) */
+        function lbApplyNow() {
+            if (!mqDesktopLb.matches || !lightboxPan || lightboxPan.style.display === 'none') return;
+            if (lbIsZoomed) {
+                lightboxPan.style.transform = lbZoomedTransform(lbPanNX, lbPanNY);
+            } else {
+                lightboxPan.style.transform = lbFitTransform(lbFitScale);
+            }
+        }
+
+        /* ── Pan smooth step ────────────────────────────────────────────────── */
+        function lbSmoothStep() {
+            if (!lbIsZoomed) { lbSmoothRaf = null; return; }
+            lbPanNX += (lbTarNX - lbPanNX) * LB_PAN_EASE;
+            lbPanNY += (lbTarNY - lbPanNY) * LB_PAN_EASE;
+            lightboxPan.style.transform = lbZoomedTransform(lbPanNX, lbPanNY);
+            if (Math.hypot(lbTarNX - lbPanNX, lbTarNY - lbPanNY) > 0.002) {
+                lbSmoothRaf = requestAnimationFrame(lbSmoothStep);
+            } else {
+                lbPanNX = lbTarNX;
+                lbPanNY = lbTarNY;
+                lbSmoothRaf = null;
+            }
+        }
+
+        /* ── Reset (slide nav / close / video) ─────────────────────────────── */
+        function resetLightboxZoom() {
+            lbIsZoomed = false;
+            lbFitScale = 1;
+            lbOrigSrc  = '';
+            lbPanNX = lbPanNY = lbTarNX = lbTarNY = 0;
+            lbClearTween();
+            if (lbSmoothRaf) { cancelAnimationFrame(lbSmoothRaf); lbSmoothRaf = null; }
+            lightboxEl?.classList.remove('lightbox-zoom-pan-ready', 'lb-prog-zoom');
+            if (lightboxPan) lightboxPan.style.transform = lbFitTransform(1); // will be corrected by showMedia
+            lightboxImg.style.transform = '';
+        }
+
+        /* ── Zoom in (click → animated) ─────────────────────────────────────── */
+        function lbZoomInAnimated() {
+            if (!mqDesktopLb.matches || lbIsZoomed) return;
+            lbClearTween();
+            lbIsZoomed = true;
+            lbPanNX = lbPanNY = lbTarNX = lbTarNY = 0;
+            /* Always zoom into the original full-res src — HQ is smaller */
+            if (lbOrigSrc && lightboxImg.src !== lbOrigSrc) {
+                lightboxImg.src = lbOrigSrc;
+            }
+            lightboxEl?.classList.add('lb-prog-zoom', 'lightbox-zoom-pan-ready');
+            lightboxPan.style.transform = lbZoomedTransform(0, 0);
+
+            const done = () => {
+                lbClearTween();
+                lightboxEl?.classList.remove('lb-prog-zoom');
+            };
+            lbTweenH = (ev) => { if (ev.target === lightboxPan && ev.propertyName === 'transform') done(); };
+            lightboxPan.addEventListener('transitionend', lbTweenH);
+            lbTweenTimer = setTimeout(done, 620);
+        }
+
+        /* ── Zoom out (click → animated) ────────────────────────────────────── */
+        function lbZoomOutAnimated() {
+            if (!mqDesktopLb.matches || !lbIsZoomed) return;
+            lbClearTween();
+            if (lbSmoothRaf) { cancelAnimationFrame(lbSmoothRaf); lbSmoothRaf = null; }
+            lbIsZoomed = false;
+            lbPanNX = lbPanNY = lbTarNX = lbTarNY = 0;
+            /* Recompute fit scale from the current image (original src) so
+               zoom-out lands exactly where the lightbox started */
+            lbFitScale = lbComputeFitScale();
+            lightboxEl?.classList.add('lb-prog-zoom');
+            lightboxEl?.classList.remove('lightbox-zoom-pan-ready');
+            lightboxPan.style.transform = lbFitTransform(lbFitScale);
+
+            const done = () => {
+                lbClearTween();
+                lightboxEl?.classList.remove('lb-prog-zoom');
+            };
+            lbTweenH = (ev) => { if (ev.target === lightboxPan && ev.propertyName === 'transform') done(); };
+            lightboxPan.addEventListener('transitionend', lbTweenH);
+            lbTweenTimer = setTimeout(done, 620);
+        }
+
+        /* ── Cursor pan follow ───────────────────────────────────────────────── */
+        function lbClamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)); }
+
+        function lbUpdatePan(clientX, clientY) {
+            if (!lbIsZoomed) return;
+            const wrap = lightboxContent.getBoundingClientRect();
+            const nx = ((clientX - wrap.left) / Math.max(wrap.width,  1) - 0.5) * 2;
+            const ny = ((clientY - wrap.top)  / Math.max(wrap.height, 1) - 0.5) * 2;
+            lbTarNX = lbClamp(-nx, -1, 1);
+            lbTarNY = lbClamp(-ny, -1, 1);
+            if (!lbSmoothRaf) lbSmoothRaf = requestAnimationFrame(lbSmoothStep);
+        }
+
+        /* ── Events ─────────────────────────────────────────────────────────── */
+        mqDesktopLb.addEventListener('change', () => { if (!mqDesktopLb.matches) resetLightboxZoom(); });
+
+        lightboxContent.addEventListener('mousemove', (e) => {
+            if (!mqDesktopLb.matches || !lightboxEl?.classList.contains('active')) return;
+            if (!lightboxPan || lightboxPan.style.display === 'none') return;
+            lbUpdatePan(e.clientX, e.clientY);
+        }, { passive: true });
+
+        lightboxImg.addEventListener('click', (e) => {
+            if (!mqDesktopLb.matches || !lightboxPan || lightboxPan.style.display === 'none') return;
+            if (lightboxEl?.classList.contains('lb-prog-zoom')) return;
+            e.stopPropagation();
+            lbIsZoomed ? lbZoomOutAnimated() : lbZoomInAnimated();
+        });
+
+        /* ── Media items ─────────────────────────────────────────────────────── */
         document.querySelectorAll('.content > video').forEach(el => {
             const idx = mediaItems.length;
             mediaItems.push({ type: 'video', src: el.querySelector('source')?.src || el.src, alt: '' });
@@ -651,18 +914,22 @@
             el.addEventListener('click', () => openLightbox(idx));
         });
 
-        // Add carousel images
         document.querySelectorAll('.carousel-slide img').forEach(img => {
             const idx = mediaItems.length;
             mediaItems.push({ type: 'image', src: img.src, alt: img.alt || '' });
             img.addEventListener('click', () => openLightbox(idx));
+            img.addEventListener('pointerenter', () => {
+                if (mqDesktopLb.matches) prefetchCloudinaryLb(img.src);
+            }, { passive: true });
         });
 
         let currentIndex = 0;
 
         function showMedia(index) {
+            resetLightboxZoom();
             const item = mediaItems[index];
             if (item.type === 'video') {
+                if (lightboxPan) lightboxPan.style.display = 'none';
                 lightboxImg.style.display = 'none';
                 lightboxVideo.style.display = 'block';
                 lightboxVideo.src = item.src;
@@ -675,20 +942,56 @@
                 lightboxVideo.style.display = 'none';
                 lightboxVideo.pause();
                 lightboxImg.style.display = 'block';
-                lightboxImg.src = item.src;
                 lightboxImg.alt = item.alt;
+
+                if (mqDesktopLb.matches) {
+                    /* Desktop: show thumb immediately (cached ≈ instant), then swap HQ */
+                    if (lightboxPan) lightboxPan.style.display = 'flex';
+                    lbOrigSrc = item.src;
+                    lightboxImg.src = item.src;
+                    lbFitScale = lbComputeFitScale();
+                    lightboxPan.style.transform = lbFitTransform(lbFitScale);
+
+                    const loadSlot = index;
+                    const hqUrl = cloudinaryLightboxHQ(item.src);
+                    if (hqUrl && hqUrl !== item.src) {
+                        const upl = new Image();
+                        upl.onload = () => {
+                            if (loadSlot !== currentIndex) return;
+                            /* Only swap to HQ in fit view — zoom view uses the
+                               original (full-res) src so it never shrinks */
+                            if (!lbIsZoomed) {
+                                lightboxImg.src = hqUrl;
+                                requestAnimationFrame(() => {
+                                    if (loadSlot === currentIndex && !lbIsZoomed) {
+                                        lbFitScale = lbComputeFitScale();
+                                        lightboxPan.style.transform = lbFitTransform(lbFitScale);
+                                    }
+                                });
+                            }
+                        };
+                        upl.onerror = () => {};
+                        upl.src = hqUrl;
+                    }
+                } else {
+                    /* Mobile: plain img, no lightbox-pan */
+                    if (lightboxPan) lightboxPan.style.display = 'none';
+                    lightboxImg.style.display = 'block';
+                    lightboxImg.src = item.src;
+                }
             }
             document.getElementById('lightbox-counter').textContent = `${index + 1} / ${mediaItems.length}`;
         }
 
         function openLightbox(index) {
             currentIndex = index;
-            showMedia(currentIndex);
             document.getElementById('lightbox').classList.add('active');
             document.body.style.overflow = 'hidden';
+            requestAnimationFrame(() => showMedia(currentIndex));
         }
 
         function closeLightbox() {
+            resetLightboxZoom();
             document.getElementById('lightbox').classList.remove('active');
             document.body.style.overflow = '';
             lightboxVideo.pause();
