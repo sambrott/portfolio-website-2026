@@ -518,14 +518,14 @@
         <!-- Rows 4–5: Instagram-format cards (desktop: two rows of three; mobile: custom scroll order via CSS) -->
         <div class="postcard-instagram-block fade-in">
           <div class="three-col">
-            <img class="pmi-coqui" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/coqui%CC%81_insta_2_copy_2_vcomcm.jpg" alt="Coquí postcard" />
-            <img class="pmi-gif" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047246/Motion-for-taino_copy_n8spjk.gif" alt="Now you're speaking my language" />
-            <img class="pmi-turtle" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047245/sea_turtle_insta_2_copy_2_hzzyhm.jpg" alt="Sea turtle postcard" />
+            <img class="pmi-coqui lightbox-no-zoom" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/coqui%CC%81_insta_2_copy_2_vcomcm.jpg" alt="Coquí postcard" />
+            <img class="pmi-gif lightbox-no-zoom" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047246/Motion-for-taino_copy_n8spjk.gif" alt="Now you're speaking my language" />
+            <img class="pmi-turtle lightbox-no-zoom" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047245/sea_turtle_insta_2_copy_2_hzzyhm.jpg" alt="Sea turtle postcard" />
           </div>
           <div class="three-col">
-            <img class="pmi-sun" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/Sun_God_2_copy_2_iks9xw.jpg" alt="Sun God postcard" />
-            <img class="pmi-trig" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/Trigonolito_insta_2_copy_2_ufvdlq.jpg" alt="Trigonolito postcard" />
-            <img class="pmi-moon" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/moon_goddess_insta_2_1_copy_2_bdnyxf.jpg" alt="Moon Goddess postcard" />
+            <img class="pmi-sun lightbox-no-zoom" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/Sun_God_2_copy_2_iks9xw.jpg" alt="Sun God postcard" />
+            <img class="pmi-trig lightbox-no-zoom" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/Trigonolito_insta_2_copy_2_ufvdlq.jpg" alt="Trigonolito postcard" />
+            <img class="pmi-moon lightbox-no-zoom" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/moon_goddess_insta_2_1_copy_2_bdnyxf.jpg" alt="Moon Goddess postcard" />
           </div>
         </div>
       </div>
@@ -703,8 +703,10 @@
             lbClearTween();
             if (lbSmoothRaf) { cancelAnimationFrame(lbSmoothRaf); lbSmoothRaf = null; }
             lightboxEl?.classList.remove('lightbox-zoom-pan-ready', 'lb-prog-zoom');
+            const srcImg = images[currentIndex];
+            const slideAllowsZoom = mqDesktopLb.matches && srcImg && !srcImg.classList.contains('lightbox-no-zoom');
             if (lightboxPan) {
-                lightboxPan.style.transform = mqDesktopLb.matches ? lbFitTransform(1) : '';
+                lightboxPan.style.transform = slideAllowsZoom ? lbFitTransform(1) : '';
             }
             lightboxImg.style.transform = '';
         }
@@ -760,6 +762,7 @@
 
         lightboxImg.addEventListener('click', (e) => {
             if (!mqDesktopLb.matches || !lightboxPan || lightboxPan.style.display === 'none') return;
+            if (images[currentIndex]?.classList.contains('lightbox-no-zoom')) return;
             if (lightboxEl?.classList.contains('lb-prog-zoom')) return;
             e.stopPropagation();
             lbIsZoomed ? lbZoomOutAnimated() : lbZoomInAnimated();
@@ -771,7 +774,11 @@
             lightboxImg.alt = img.alt || '';
             document.getElementById('lightbox-counter').textContent = `${index + 1} / ${images.length}`;
 
-            if (mqDesktopLb.matches) {
+            const zoomOk = mqDesktopLb.matches && img && !img.classList.contains('lightbox-no-zoom');
+
+            if (zoomOk) {
+                lightboxImg.style.maxWidth = '';
+                lightboxImg.style.maxHeight = '';
                 lightboxPan.style.display = 'flex';
                 lbOrigSrc = img.src;
                 lightboxImg.src = img.src;
