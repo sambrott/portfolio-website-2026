@@ -173,6 +173,13 @@
             object-fit: cover;
         }
 
+        /* Same vertical spacing as when two .three-col were separate .content children (gap: 24px) */
+        .postcard-instagram-block {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
         .project-nav {
             max-width: 1200px;
             margin: 60px auto 0;
@@ -706,6 +713,8 @@
             const srcImg = images[currentIndex];
             const slideAllowsZoom = mqDesktopLb.matches && srcImg && !srcImg.classList.contains('lightbox-no-zoom');
             if (lightboxPan) {
+                lightboxPan.style.width = '';
+                lightboxPan.style.height = '';
                 lightboxPan.style.transform = slideAllowsZoom ? lbFitTransform(1) : '';
             }
             lightboxImg.style.transform = '';
@@ -779,6 +788,8 @@
             if (zoomOk) {
                 lightboxImg.style.maxWidth = '';
                 lightboxImg.style.maxHeight = '';
+                lightboxPan.style.width = '';
+                lightboxPan.style.height = '';
                 lightboxPan.style.display = 'flex';
                 lbOrigSrc = img.src;
                 lightboxImg.src = img.src;
@@ -806,7 +817,15 @@
                 }
             } else {
                 lightboxPan.style.display = 'flex';
-                lightboxPan.style.transform = 'none';
+                if (mqDesktopLb.matches) {
+                    lightboxPan.style.width = '100%';
+                    lightboxPan.style.height = '100%';
+                    lightboxPan.style.transform = 'translate(-50%, -50%)';
+                } else {
+                    lightboxPan.style.width = '';
+                    lightboxPan.style.height = '';
+                    lightboxPan.style.transform = 'none';
+                }
                 lightboxImg.style.maxWidth  = '100%';
                 lightboxImg.style.maxHeight = '100%';
                 lightboxImg.src = img.src;
