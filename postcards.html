@@ -289,6 +289,19 @@
             .lightbox-zoom-host.lightbox-zoom-pan-ready #lightbox-img {
                 cursor: crosshair;
             }
+            /* lightbox-no-zoom slides: fit whole image in frame (contain), not natural pixel size */
+            .lightbox-zoom-host.lightbox-simple-fit #lightbox-pan {
+                width: 100% !important;
+                height: 100% !important;
+            }
+            .lightbox-zoom-host.lightbox-simple-fit #lightbox-img {
+                max-width: 100% !important;
+                max-height: 100% !important;
+                width: auto !important;
+                height: auto !important;
+                object-fit: contain !important;
+                cursor: default !important;
+            }
         }
 
         .lightbox-close {
@@ -779,6 +792,7 @@
 
         function showMedia(index) {
             resetLightboxZoom();
+            lightboxEl.classList.remove('lightbox-simple-fit');
             const img = images[index];
             lightboxImg.alt = img.alt || '';
             document.getElementById('lightbox-counter').textContent = `${index + 1} / ${images.length}`;
@@ -816,6 +830,7 @@
                     upl.src = hqUrl;
                 }
             } else {
+                lightboxEl.classList.add('lightbox-simple-fit');
                 lightboxPan.style.display = 'flex';
                 if (mqDesktopLb.matches) {
                     lightboxPan.style.width = '100%';
@@ -826,8 +841,8 @@
                     lightboxPan.style.height = '';
                     lightboxPan.style.transform = 'none';
                 }
-                lightboxImg.style.maxWidth  = '100%';
-                lightboxImg.style.maxHeight = '100%';
+                lightboxImg.style.maxWidth = '';
+                lightboxImg.style.maxHeight = '';
                 lightboxImg.src = img.src;
             }
         }
@@ -841,7 +856,7 @@
 
         function closeLightbox() {
             resetLightboxZoom();
-            lightboxEl.classList.remove('active');
+            lightboxEl.classList.remove('lightbox-simple-fit', 'active');
             document.body.style.overflow = '';
         }
 
