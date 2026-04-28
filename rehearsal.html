@@ -603,8 +603,14 @@
             main { padding-top: 80px; padding-bottom: 60px; }
             .hero { margin-bottom: 24px; }
             .hero-inner { width: auto; }
-            .hero-title-row { flex-wrap: wrap; white-space: normal; }
-            .hero h1 { font-size: 28px; }
+            .hero-title-row {
+                flex-wrap: wrap;
+                white-space: normal;
+                align-items: flex-start;
+                /* Match the tight vertical rhythm between awards row and body copy */
+                gap: 12px;
+            }
+            .hero h1 { font-size: 28px; margin-bottom: 0; }
             .hero p { font-size: 14px; }
             .desktop-br { display: none; }
             .title-awards .award-icon { width: 70px; height: 70px; }
