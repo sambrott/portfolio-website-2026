@@ -828,7 +828,10 @@
             lbClearTween();
             if (lbSmoothRaf) { cancelAnimationFrame(lbSmoothRaf); lbSmoothRaf = null; }
             lightboxEl?.classList.remove('lightbox-zoom-pan-ready', 'lb-prog-zoom');
-            if (lightboxPan) lightboxPan.style.transform = lbFitTransform(1); // will be corrected by showMedia
+            if (lightboxPan) {
+                /* Centering transform only applies with desktop zoom CSS (absolute + 50%/50%) */
+                lightboxPan.style.transform = mqDesktopLb.matches ? lbFitTransform(1) : '';
+            }
             lightboxImg.style.transform = '';
         }
 
@@ -974,8 +977,11 @@
                         upl.src = hqUrl;
                     }
                 } else {
-                    /* Mobile: plain img, no lightbox-pan */
-                    if (lightboxPan) lightboxPan.style.display = 'none';
+                    /* Narrow / touch: img stays inside #lightbox-pan — pan must be visible (not display:none) */
+                    if (lightboxPan) {
+                        lightboxPan.style.display = 'flex';
+                        lightboxPan.style.transform = 'none';
+                    }
                     lightboxImg.style.display = 'block';
                     lightboxImg.src = item.src;
                 }

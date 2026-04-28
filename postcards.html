@@ -703,7 +703,9 @@
             lbClearTween();
             if (lbSmoothRaf) { cancelAnimationFrame(lbSmoothRaf); lbSmoothRaf = null; }
             lightboxEl?.classList.remove('lightbox-zoom-pan-ready', 'lb-prog-zoom');
-            if (lightboxPan) lightboxPan.style.transform = lbFitTransform(1);
+            if (lightboxPan) {
+                lightboxPan.style.transform = mqDesktopLb.matches ? lbFitTransform(1) : '';
+            }
             lightboxImg.style.transform = '';
         }
 
@@ -796,7 +798,8 @@
                     upl.src = hqUrl;
                 }
             } else {
-                lightboxPan.style.display = 'none';
+                lightboxPan.style.display = 'flex';
+                lightboxPan.style.transform = 'none';
                 lightboxImg.style.maxWidth  = '100%';
                 lightboxImg.style.maxHeight = '100%';
                 lightboxImg.src = img.src;
