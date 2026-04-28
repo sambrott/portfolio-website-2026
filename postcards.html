@@ -228,11 +228,60 @@
             justify-content: center;
         }
 
+        .lightbox-pan {
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
         .lightbox-content img {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
             border-radius: 4px;
+        }
+
+        /*
+         * Desktop zoom architecture:
+         * #lightbox-pan positioned absolutely at center; handles scale + translate.
+         * #lightbox-img renders at natural pixel size (no max-width) for crisp zoom.
+         */
+        @media (min-width: 769px) and (pointer: fine) {
+            .lightbox-zoom-host .lightbox-content {
+                overflow: hidden;
+                touch-action: none;
+            }
+            .lightbox-zoom-host #lightbox-pan {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: auto;
+                height: auto;
+                display: none;
+                transform-origin: 50% 50%;
+                will-change: transform;
+                transition: none;
+            }
+            .lightbox-zoom-host.lb-prog-zoom #lightbox-pan {
+                transition: transform 0.48s cubic-bezier(0.22, 1, 0.36, 1) !important;
+            }
+            .lightbox-zoom-host #lightbox-img {
+                display: block;
+                width: auto;
+                height: auto;
+                max-width: none !important;
+                max-height: none !important;
+                border-radius: 4px;
+                user-select: none;
+                cursor: zoom-in;
+                backface-visibility: hidden;
+                will-change: auto;
+            }
+            .lightbox-zoom-host.lightbox-zoom-pan-ready #lightbox-img {
+                cursor: crosshair;
+            }
         }
 
         .lightbox-close {
@@ -391,6 +440,21 @@
             .content { gap: 16px; }
             .two-col { grid-template-columns: 1fr; gap: 12px; }
             .three-col { grid-template-columns: 1fr; gap: 12px; }
+            /* Single column scroll order for the six Instagram cards (desktop grid unchanged) */
+            .postcard-instagram-block {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .postcard-instagram-block .three-col {
+                display: contents;
+            }
+            .postcard-instagram-block .pmi-gif { order: 1; }
+            .postcard-instagram-block .pmi-moon { order: 2; }
+            .postcard-instagram-block .pmi-coqui { order: 3; }
+            .postcard-instagram-block .pmi-sun { order: 4; }
+            .postcard-instagram-block .pmi-trig { order: 5; }
+            .postcard-instagram-block .pmi-turtle { order: 6; }
             .project-nav { margin-top: 40px; gap: 16px; }
             .project-nav a { font-size: 14px; }
             .lightbox-nav { width: 44px; height: 44px; font-size: 20px; }
@@ -451,18 +515,18 @@
         <!-- Row 3: Instagram carousel composite (full width like rows 1–2) -->
         <img class="fade-in" src="https://res.cloudinary.com/dz9d0grpe/image/upload/Insta_Carousel_avrqdq.png" alt="Instagram carousel series" />
         
-        <!-- Row 4: Three cards -->
-        <div class="three-col fade-in">
-          <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/coqui%CC%81_insta_2_copy_2_vcomcm.jpg" alt="Coquí postcard" />
-          <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047246/Motion-for-taino_copy_n8spjk.gif" alt="Now you're speaking my language" />
-          <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047245/sea_turtle_insta_2_copy_2_hzzyhm.jpg" alt="Sea turtle postcard" />
-        </div>
-        
-        <!-- Row 5: Three cards -->
-        <div class="three-col fade-in">
-          <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/Sun_God_2_copy_2_iks9xw.jpg" alt="Sun God postcard" />
-          <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/Trigonolito_insta_2_copy_2_ufvdlq.jpg" alt="Trigonolito postcard" />
-          <img src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/moon_goddess_insta_2_1_copy_2_bdnyxf.jpg" alt="Moon Goddess postcard" />
+        <!-- Rows 4–5: Instagram-format cards (desktop: two rows of three; mobile: custom scroll order via CSS) -->
+        <div class="postcard-instagram-block fade-in">
+          <div class="three-col">
+            <img class="pmi-coqui" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/coqui%CC%81_insta_2_copy_2_vcomcm.jpg" alt="Coquí postcard" />
+            <img class="pmi-gif" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047246/Motion-for-taino_copy_n8spjk.gif" alt="Now you're speaking my language" />
+            <img class="pmi-turtle" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047245/sea_turtle_insta_2_copy_2_hzzyhm.jpg" alt="Sea turtle postcard" />
+          </div>
+          <div class="three-col">
+            <img class="pmi-sun" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/Sun_God_2_copy_2_iks9xw.jpg" alt="Sun God postcard" />
+            <img class="pmi-trig" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/Trigonolito_insta_2_copy_2_ufvdlq.jpg" alt="Trigonolito postcard" />
+            <img class="pmi-moon" src="https://res.cloudinary.com/dz9d0grpe/image/upload/v1770047247/moon_goddess_insta_2_1_copy_2_bdnyxf.jpg" alt="Moon Goddess postcard" />
+          </div>
         </div>
       </div>
 
@@ -472,11 +536,13 @@
       </div>
     </main>
 
-    <div class="lightbox" id="lightbox">
+    <div class="lightbox lightbox-zoom-host" id="lightbox">
         <button class="lightbox-close" onclick="closeLightbox()">×</button>
         <button class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1)">‹</button>
         <div class="lightbox-content" id="lightbox-content">
-            <img id="lightbox-img" src="" alt="" />
+            <div id="lightbox-pan" class="lightbox-pan" aria-hidden="true">
+                <img id="lightbox-img" src="" alt="" fetchpriority="high" />
+            </div>
         </div>
         <button class="lightbox-nav lightbox-next" onclick="navigateLightbox(1)">›</button>
         <div class="lightbox-counter" id="lightbox-counter"></div>
@@ -540,20 +606,213 @@
             img.addEventListener('click', () => openLightbox(index));
         });
 
+        const lightboxImg     = document.getElementById('lightbox-img');
+        const lightboxPan     = document.getElementById('lightbox-pan');
         const lightboxContent = document.getElementById('lightbox-content');
+        const lightboxEl      = document.getElementById('lightbox');
+        const mqDesktopLb     = window.matchMedia('(min-width: 769px) and (pointer: fine)');
+
+        const LB_PAN_EASE = 0.35;
+
+        /* ── Cloudinary HQ URL ─────────────────────────────────────────────── */
+        function lbApproxContentW() {
+            let w = lightboxContent.getBoundingClientRect().width;
+            if (!w || w < 80) w = window.innerWidth * 0.9;
+            return Math.max(480, w);
+        }
+
+        function cloudinaryBarePath(url) {
+            const ix = url.indexOf('/image/upload/');
+            if (ix === -1) return '';
+            const rest = url.slice(ix + '/image/upload/'.length);
+            const vm = rest.match(/v\d+\/.+/i);
+            return vm ? vm[0] : (/^[^/]+\//.test(rest) ? rest : '');
+        }
+
+        function cloudinaryLightboxHQ(url) {
+            if (!url || !url.includes('res.cloudinary.com')) return url;
+            const ix = url.indexOf('/image/upload/');
+            if (ix === -1) return url;
+            const bare = cloudinaryBarePath(url);
+            if (!bare) return url;
+            const dpr = Math.min(3, Math.max(window.devicePixelRatio || 1, 1));
+            const w = Math.min(4096, Math.max(1200, Math.ceil(lbApproxContentW() * dpr / 64) * 64));
+            const chain = `w_${w},c_limit,q_auto:best,f_auto`;
+            return `${url.slice(0, ix + '/image/upload/'.length)}${chain}/${bare}`;
+        }
+
+        /* ── State ─────────────────────────────────────────────────────────── */
+        let lbIsZoomed   = false;
+        let lbFitScale   = 1;
+        let lbOrigSrc    = '';
+        let lbPanNX      = 0;
+        let lbPanNY      = 0;
+        let lbTarNX      = 0;
+        let lbTarNY      = 0;
+        let lbSmoothRaf  = null;
+        let lbTweenTimer = null;
+        let lbTweenH     = null;
+
+        function lbClearTween() {
+            if (lbTweenTimer) { clearTimeout(lbTweenTimer); lbTweenTimer = null; }
+            if (lbTweenH)     { lightboxPan.removeEventListener('transitionend', lbTweenH); lbTweenH = null; }
+        }
+
+        function lbComputeFitScale() {
+            const cw = lightboxContent.offsetWidth  || window.innerWidth  * 0.9;
+            const ch = lightboxContent.offsetHeight || window.innerHeight * 0.9;
+            const iw = lightboxImg.naturalWidth  || lightboxImg.offsetWidth  || 1;
+            const ih = lightboxImg.naturalHeight || lightboxImg.offsetHeight || 1;
+            return Math.min(1, cw / iw, ch / ih);
+        }
+
+        function lbFitTransform(scale) {
+            return `translate(-50%, -50%) scale(${scale})`;
+        }
+
+        function lbZoomedTransform(panNX, panNY) {
+            const cw = lightboxContent.offsetWidth;
+            const ch = lightboxContent.offsetHeight;
+            const iw = lightboxImg.naturalWidth  || lightboxImg.offsetWidth;
+            const ih = lightboxImg.naturalHeight || lightboxImg.offsetHeight;
+            const maxX = Math.max(0, (iw - cw) / 2);
+            const maxY = Math.max(0, (ih - ch) / 2);
+            const px = panNX * maxX;
+            const py = panNY * maxY;
+            return `translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) scale(1)`;
+        }
+
+        function lbSmoothStep() {
+            if (!lbIsZoomed) { lbSmoothRaf = null; return; }
+            lbPanNX += (lbTarNX - lbPanNX) * LB_PAN_EASE;
+            lbPanNY += (lbTarNY - lbPanNY) * LB_PAN_EASE;
+            lightboxPan.style.transform = lbZoomedTransform(lbPanNX, lbPanNY);
+            if (Math.hypot(lbTarNX - lbPanNX, lbTarNY - lbPanNY) > 0.002) {
+                lbSmoothRaf = requestAnimationFrame(lbSmoothStep);
+            } else {
+                lbPanNX = lbTarNX; lbPanNY = lbTarNY;
+                lbSmoothRaf = null;
+            }
+        }
+
+        function resetLightboxZoom() {
+            lbIsZoomed = false;
+            lbFitScale = 1;
+            lbOrigSrc  = '';
+            lbPanNX = lbPanNY = lbTarNX = lbTarNY = 0;
+            lbClearTween();
+            if (lbSmoothRaf) { cancelAnimationFrame(lbSmoothRaf); lbSmoothRaf = null; }
+            lightboxEl?.classList.remove('lightbox-zoom-pan-ready', 'lb-prog-zoom');
+            if (lightboxPan) lightboxPan.style.transform = lbFitTransform(1);
+            lightboxImg.style.transform = '';
+        }
+
+        function lbZoomInAnimated() {
+            if (!mqDesktopLb.matches || lbIsZoomed) return;
+            lbClearTween();
+            lbIsZoomed = true;
+            lbPanNX = lbPanNY = lbTarNX = lbTarNY = 0;
+            if (lbOrigSrc && lightboxImg.src !== lbOrigSrc) lightboxImg.src = lbOrigSrc;
+            lightboxEl?.classList.add('lb-prog-zoom', 'lightbox-zoom-pan-ready');
+            lightboxPan.style.transform = lbZoomedTransform(0, 0);
+            const done = () => { lbClearTween(); lightboxEl?.classList.remove('lb-prog-zoom'); };
+            lbTweenH = (ev) => { if (ev.target === lightboxPan && ev.propertyName === 'transform') done(); };
+            lightboxPan.addEventListener('transitionend', lbTweenH);
+            lbTweenTimer = setTimeout(done, 620);
+        }
+
+        function lbZoomOutAnimated() {
+            if (!mqDesktopLb.matches || !lbIsZoomed) return;
+            lbClearTween();
+            if (lbSmoothRaf) { cancelAnimationFrame(lbSmoothRaf); lbSmoothRaf = null; }
+            lbIsZoomed = false;
+            lbPanNX = lbPanNY = lbTarNX = lbTarNY = 0;
+            lbFitScale = lbComputeFitScale();
+            lightboxEl?.classList.add('lb-prog-zoom');
+            lightboxEl?.classList.remove('lightbox-zoom-pan-ready');
+            lightboxPan.style.transform = lbFitTransform(lbFitScale);
+            const done = () => { lbClearTween(); lightboxEl?.classList.remove('lb-prog-zoom'); };
+            lbTweenH = (ev) => { if (ev.target === lightboxPan && ev.propertyName === 'transform') done(); };
+            lightboxPan.addEventListener('transitionend', lbTweenH);
+            lbTweenTimer = setTimeout(done, 620);
+        }
+
+        function lbClamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)); }
+
+        function lbUpdatePan(clientX, clientY) {
+            if (!lbIsZoomed) return;
+            const wrap = lightboxContent.getBoundingClientRect();
+            const nx = ((clientX - wrap.left) / Math.max(wrap.width,  1) - 0.5) * 2;
+            const ny = ((clientY - wrap.top)  / Math.max(wrap.height, 1) - 0.5) * 2;
+            lbTarNX = lbClamp(-nx, -1, 1);
+            lbTarNY = lbClamp(-ny, -1, 1);
+            if (!lbSmoothRaf) lbSmoothRaf = requestAnimationFrame(lbSmoothStep);
+        }
+
+        mqDesktopLb.addEventListener('change', () => { if (!mqDesktopLb.matches) resetLightboxZoom(); });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!mqDesktopLb.matches || !lightboxEl?.classList.contains('active')) return;
+            lbUpdatePan(e.clientX, e.clientY);
+        });
+
+        lightboxImg.addEventListener('click', (e) => {
+            if (!mqDesktopLb.matches || !lightboxPan || lightboxPan.style.display === 'none') return;
+            if (lightboxEl?.classList.contains('lb-prog-zoom')) return;
+            e.stopPropagation();
+            lbIsZoomed ? lbZoomOutAnimated() : lbZoomInAnimated();
+        });
+
+        function showMedia(index) {
+            resetLightboxZoom();
+            const img = images[index];
+            lightboxImg.alt = img.alt || '';
+            document.getElementById('lightbox-counter').textContent = `${index + 1} / ${images.length}`;
+
+            if (mqDesktopLb.matches) {
+                lightboxPan.style.display = 'flex';
+                lbOrigSrc = img.src;
+                lightboxImg.src = img.src;
+                lbFitScale = lbComputeFitScale();
+                lightboxPan.style.transform = lbFitTransform(lbFitScale);
+
+                const loadSlot = index;
+                const hqUrl = cloudinaryLightboxHQ(img.src);
+                if (hqUrl && hqUrl !== img.src) {
+                    const upl = new Image();
+                    upl.onload = () => {
+                        if (loadSlot !== currentIndex) return;
+                        if (!lbIsZoomed) {
+                            lightboxImg.src = hqUrl;
+                            requestAnimationFrame(() => {
+                                if (loadSlot === currentIndex && !lbIsZoomed) {
+                                    lbFitScale = lbComputeFitScale();
+                                    lightboxPan.style.transform = lbFitTransform(lbFitScale);
+                                }
+                            });
+                        }
+                    };
+                    upl.onerror = () => {};
+                    upl.src = hqUrl;
+                }
+            } else {
+                lightboxPan.style.display = 'none';
+                lightboxImg.style.maxWidth  = '100%';
+                lightboxImg.style.maxHeight = '100%';
+                lightboxImg.src = img.src;
+            }
+        }
 
         function openLightbox(index) {
             currentIndex = index;
-            const lightboxImg = document.getElementById('lightbox-img');
-            lightboxImg.src = images[currentIndex].src;
-            lightboxImg.alt = images[currentIndex].alt;
-            document.getElementById('lightbox-counter').textContent = `${currentIndex + 1} / ${images.length}`;
-            document.getElementById('lightbox').classList.add('active');
+            lightboxEl.classList.add('active');
             document.body.style.overflow = 'hidden';
+            requestAnimationFrame(() => showMedia(currentIndex));
         }
 
         function closeLightbox() {
-            document.getElementById('lightbox').classList.remove('active');
+            resetLightboxZoom();
+            lightboxEl.classList.remove('active');
             document.body.style.overflow = '';
         }
 
@@ -561,14 +820,11 @@
             currentIndex += direction;
             if (currentIndex < 0) currentIndex = images.length - 1;
             if (currentIndex >= images.length) currentIndex = 0;
-            const lightboxImg = document.getElementById('lightbox-img');
-            lightboxImg.src = images[currentIndex].src;
-            lightboxImg.alt = images[currentIndex].alt;
-            document.getElementById('lightbox-counter').textContent = `${currentIndex + 1} / ${images.length}`;
+            showMedia(currentIndex);
         }
 
         document.addEventListener('keydown', (e) => {
-            if (!document.getElementById('lightbox').classList.contains('active')) return;
+            if (!lightboxEl.classList.contains('active')) return;
             if (e.key === 'Escape') closeLightbox();
             if (e.key === 'ArrowLeft') navigateLightbox(-1);
             if (e.key === 'ArrowRight') navigateLightbox(1);
