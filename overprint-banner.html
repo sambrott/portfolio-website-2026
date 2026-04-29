@@ -304,7 +304,9 @@ let bgTap = null;
 let draggedMesh = null;
 let dragStartX = 0;
 let dragStartY = 0;
+let dragStartTime = 0;
 let dragStartSlide = 0;
+let meshDragMaxSq = 0;
 const canvas = renderer.domElement;
 
 function pickMesh(clientX, clientY) {
@@ -331,6 +333,8 @@ canvas.addEventListener('pointerdown', (e) => {
     draggedMesh = m;
     dragStartX = e.clientX;
     dragStartY = e.clientY;
+    dragStartTime = performance.now();
+    meshDragMaxSq = 0;
     dragStartSlide = m.userData.slideOffset;
     canvas.style.cursor = 'grabbing';
     canvas.setPointerCapture(e.pointerId);
@@ -353,6 +357,9 @@ canvas.addEventListener('pointermove', (e) => {
   }
   e.preventDefault();
   const i = draggedMesh.userData.index;
+  const ddx = e.clientX - dragStartX;
+  const ddy = e.clientY - dragStartY;
+  meshDragMaxSq = Math.max(meshDragMaxSq, ddx * ddx + ddy * ddy);
   const idleNow = idleSlideAt(i, time);
   const totalWant = targetSlideFromPointer(
     draggedMesh.userData.baseX,
@@ -374,7 +381,13 @@ function endDrag() {
 canvas.addEventListener('pointerup', (e) => {
   if (draggedMesh) {
     try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+    const moved = meshDragMaxSq > 100;
+    const dt = performance.now() - dragStartTime;
     endDrag();
+    /* Tap on logo (no real drag) → same as background tap: open site. Drag still drives slide. */
+    if (!moved && dt < 900) {
+      window.open(OVERPRINT_SITE_URL, '_blank', 'noopener,noreferrer');
+    }
     return;
   }
   if (bgTap && bgTap.pointerId === e.pointerId) {
