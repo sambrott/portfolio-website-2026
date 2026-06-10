@@ -34,6 +34,7 @@
   let viewportHeight = 0;
   let headerWidth = 0;
   let headerHeight = 0;
+  let patternScale = 1;
   let strength = DEFAULT_LEVEL / 100;
   const noiseCanvas = document.createElement("canvas");
   const noiseCtx = noiseCanvas.getContext("2d", { alpha: true });
@@ -56,6 +57,7 @@
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     viewportWidth = Math.ceil(window.innerWidth);
     viewportHeight = Math.ceil(window.innerHeight);
+    patternScale = viewportWidth <= 768 ? 0.58 : 1;
     canvas.width = Math.ceil(viewportWidth * dpr);
     canvas.height = Math.ceil(viewportHeight * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -89,12 +91,18 @@
 
     const pattern = ctx.createPattern(noiseCanvas, "repeat");
     if (!pattern) return;
+    if (typeof pattern.setTransform === "function") {
+      pattern.setTransform(new DOMMatrix().scale(patternScale));
+    }
     ctx.clearRect(0, 0, viewportWidth, viewportHeight);
     ctx.fillStyle = pattern;
     ctx.fillRect(0, 0, viewportWidth, viewportHeight);
     if (headerCtx && headerWidth > 0 && headerHeight > 0) {
       const headerPattern = headerCtx.createPattern(noiseCanvas, "repeat");
       if (!headerPattern) return;
+      if (typeof headerPattern.setTransform === "function") {
+        headerPattern.setTransform(new DOMMatrix().scale(patternScale));
+      }
       headerCtx.clearRect(0, 0, headerWidth, headerHeight);
       headerCtx.fillStyle = headerPattern;
       headerCtx.fillRect(0, 0, headerWidth, headerHeight);
